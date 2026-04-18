@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>保护轮廓(PP) - CertHub</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "PingFang SC","Microsoft YaHei",sans-serif; font-size: 14px; color: rgba(0,0,0,0.85); background: #f0f2f5; height: 100vh; overflow: hidden; display: flex; }
+
+    .sidebar { width: 208px; flex-shrink: 0; background: #fff; height: 100vh; display: flex; flex-direction: column; border-right: 1px solid #f0f0f0; }
+    .sidebar-logo { height: 50px; display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid #f0f0f0; font-weight: 700; font-size: 16px; color: #1890ff; }
+    .sidebar-menu { padding: 12px 0; flex: 1; }
+    .menu-item { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px 0 20px; border-radius: 8px; margin: 0 4px 2px; cursor: pointer; color: rgba(0,0,0,0.65); transition: all 0.2s; }
+    .menu-item:hover { background: #f5f5f5; color: rgba(0,0,0,0.85); }
+    .menu-item.active { background: #e6f7ff; color: #1890ff; }
+    .menu-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    .main-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .header { height: 50px; background: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; border-bottom: 1px solid #f0f0f0; flex-shrink: 0; }
+    .breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 14px; color: rgba(0,0,0,0.45); }
+    .breadcrumb .current { color: rgba(0,0,0,0.85); }
+    .user-avatar { width: 28px; height: 28px; border-radius: 50%; background: #1890ff; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; cursor: pointer; }
+
+    .content { flex: 1; overflow-y: auto; padding: 20px 24px; }
+
+    .search-container { background: #fff; border-radius: 8px; padding: 20px 24px 8px; margin-bottom: 16px; }
+    .filter-row { display: flex; gap: 24px; margin-bottom: 16px; }
+    .filter-item { flex: 1; display: flex; align-items: center; }
+    .filter-item label { width: 100px; flex-shrink: 0; text-align: right; padding-right: 8px; color: rgba(0,0,0,0.85); line-height: 32px; }
+    .filter-item input, .filter-item select { flex: 1; height: 32px; border: 1px solid #d9d9d9; border-radius: 6px; padding: 0 11px; font-size: 14px; outline: none; background: #fff; }
+    .filter-item input:focus, .filter-item select:focus { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.2); }
+    .btn-row { display: flex; gap: 8px; align-items: center; margin-left: 100px; padding-left: 8px; }
+
+    .content-container { background: #fff; border-radius: 8px; padding: 16px 24px; }
+    .header-wrap { margin-bottom: 16px; }
+
+    .btn { display: inline-flex; align-items: center; gap: 4px; height: 32px; padding: 0 15px; border-radius: 6px; font-size: 14px; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; }
+    .btn-primary { background: #1890ff; color: #fff; border-color: #1890ff; }
+    .btn-primary:hover { background: #40a9ff; border-color: #40a9ff; }
+    .btn-default { background: #fff; color: rgba(0,0,0,0.85); border-color: #d9d9d9; }
+    .btn-default:hover { color: #1890ff; border-color: #1890ff; }
+    .btn-ghost { background: transparent; color: #1890ff; border-color: #1890ff; }
+    .btn-ghost:hover { background: #e6f7ff; }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead th { background: #fafafa; padding: 12px 16px; text-align: left; font-weight: 500; color: rgba(0,0,0,0.85); border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
+    tbody td { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: #fafafa; }
+
+    .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+    .status-published { background: #1890ff; }
+    .status-unpublished { background: #d9d9d9; }
+
+    .action-link { color: #1890ff; cursor: pointer; margin-right: 8px; }
+    .action-link:hover { color: #40a9ff; }
+    .action-link.danger { color: #ff4d4f; }
+    .action-link.danger:hover { color: #ff7875; }
+
+    .ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 300px; display: block; }
+
+    .pagination { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 16px; }
+    .page-btn { width: 32px; height: 32px; border: 1px solid #d9d9d9; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #fff; font-size: 13px; }
+    .page-btn:hover, .page-btn.active { border-color: #1890ff; color: #1890ff; }
+    .page-info { font-size: 13px; color: rgba(0,0,0,0.45); }
+
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 8px; width: 520px; box-shadow: 0 6px 24px rgba(0,0,0,0.2); }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; font-size: 16px; font-weight: 500; }
+    .modal-close { cursor: pointer; color: rgba(0,0,0,0.45); font-size: 18px; }
+    .modal-close:hover { color: rgba(0,0,0,0.85); }
+    .modal-body { padding: 24px; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 24px; border-top: 1px solid #f0f0f0; }
+    .form-row { display: flex; align-items: center; margin-bottom: 20px; }
+    .form-label { width: 80px; flex-shrink: 0; text-align: right; padding-right: 8px; color: rgba(0,0,0,0.85); }
+    .form-label.required::before { content: '*'; color: #f5222d; margin-right: 4px; }
+    .form-field { flex: 1; }
+    .form-field input, .form-field select { width: 100%; height: 32px; border: 1px solid #d9d9d9; border-radius: 6px; padding: 0 11px; font-size: 14px; outline: none; }
+    .form-field input:focus, .form-field select:focus { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.2); }
+    .delete-content { display: block; margin: 8px 0 24px; color: rgba(0,0,0,0.45); }
+    .btn-danger { background: #ff4d4f; color: #fff; border-color: #ff4d4f; }
+    .btn-danger:hover { background: #ff7875; border-color: #ff7875; }
+  </style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-logo">CertHub 后台</div>
+  <div class="sidebar-menu">
+    <div class="menu-item" onclick="location.href='template.html'">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h12v2H2V2zm0 4h8v2H2V6zm0 4h10v2H2v-2z"/></svg>
+      文档模板
+    </div>
+    <div class="menu-item active">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 2a5 5 0 110 10A5 5 0 018 3zm0 2a3 3 0 100 6 3 3 0 000-6z"/></svg>
+      保护轮廓(PP)
+    </div>
+    <div class="menu-item" onclick="location.href='acronym.html'">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 3h10v2H3V3zm0 4h6v2H3V7zm0 4h8v2H3v-2z"/></svg>
+      缩略语
+    </div>
+  </div>
+</div>
+
+<div class="main-wrap">
+  <div class="header">
+    <div class="breadcrumb">
+      <span>后台管理</span>
+      <span>/</span>
+      <span class="current">保护轮廓(PP)</span>
+    </div>
+    <div class="user-avatar">管</div>
+  </div>
+
+  <div class="content">
+    <div class="search-container">
+      <div class="filter-row">
+        <div class="filter-item">
+          <label>PP名称</label>
+          <input type="text" id="filterName" placeholder="" />
+        </div>
+        <div class="filter-item">
+          <label>认证类型</label>
+          <select id="filterCategory">
+            <option value="">全部</option>
+            <option>CC认证</option>
+            <option>等保认证</option>
+          </select>
+        </div>
+        <div class="filter-item">
+          <label>PP等级</label>
+          <select id="filterLevel">
+            <option value="">全部</option>
+            <option>EAL1</option>
+            <option>EAL2</option>
+            <option>EAL3</option>
+            <option>EAL4</option>
+          </select>
+        </div>
+      </div>
+      <div class="filter-row">
+        <div class="filter-item">
+          <label>状态</label>
+          <select id="filterStatus" style="max-width:200px">
+            <option value="">全部</option>
+            <option value="1">已发布</option>
+            <option value="0">未发布</option>
+          </select>
+        </div>
+        <div style="flex:2; display:flex; align-items:center; padding-left:8px;">
+          <div class="btn-row">
+            <button class="btn btn-ghost" onclick="filterTable()">筛选</button>
+            <button class="btn btn-default" onclick="resetFilter()">重置</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-container">
+      <div class="header-wrap">
+        <button class="btn btn-primary" onclick="openAddModal()">+ 创建PP</button>
+      </div>
+      <table id="ppTable">
+        <thead>
+          <tr>
+            <th>PP名称</th>
+            <th style="width:120px">认证类型</th>
+            <th style="width:90px">PP等级</th>
+            <th style="width:100px">状态</th>
+            <th style="width:150px">上次更新时间</th>
+            <th style="width:180px">操作</th>
+          </tr>
+        </thead>
+        <tbody id="ppTableBody"></tbody>
+      </table>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 新增/编辑 PP Modal -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span id="modalTitle">创建PP</span>
+      <span class="modal-close" onclick="closeModal('addModal')">×</span>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label class="form-label required">PP名称</label>
+        <div class="form-field"><input type="text" id="ppName" placeholder="请输入PP名称" maxlength="100" /></div>
+      </div>
+      <div class="form-row">
+        <label class="form-label required">认证类型</label>
+        <div class="form-field">
+          <select id="ppCategory" onchange="updateLevelOptions()">
+            <option value="">请选择</option>
+            <option value="1">CC认证</option>
+            <option value="2">等保认证</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label required">PP等级</label>
+        <div class="form-field">
+          <select id="ppLevel">
+            <option value="">请先选择认证类型</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="closeModal('addModal')">取消</button>
+      <button class="btn btn-primary" id="confirmBtn" onclick="confirmAdd()">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 删除 Modal -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span>删除PP</span>
+      <span class="modal-close" onclick="closeModal('deleteModal')">×</span>
+    </div>
+    <div class="modal-body">
+      <span class="delete-content" id="deleteContent"></span>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="closeModal('deleteModal')">取消</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">确定</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const levelMap = {
+    '1': ['EAL1','EAL2','EAL3','EAL4','EAL4+','EAL5','EAL6','EAL7'],
+    '2': ['一级','二级','三级','四级']
+  }
+
+  const mockData = [
+    { id:1, name:'CC通用PP模板 v1.0', category:'CC认证', level:'EAL4', status:1, updateTime:'2024-03-15' },
+    { id:2, name:'网络设备PP', category:'CC认证', level:'EAL2', status:1, updateTime:'2024-02-20' },
+    { id:3, name:'操作系统PP草稿', category:'CC认证', level:'EAL3', status:0, updateTime:'2024-01-10' },
+    { id:4, name:'等保三级PP', category:'等保认证', level:'三级', status:1, updateTime:'2023-12-05' },
+    { id:5, name:'智能卡PP', category:'CC认证', level:'EAL4+', status:0, updateTime:'2023-11-18' },
+  ]
+
+  let tableData = [...mockData]
+  let deleteId = null
+  const PAGE_SIZE = 10
+  let currentPage = 1
+
+  function renderTable() {
+    const start = (currentPage - 1) * PAGE_SIZE
+    const pageData = tableData.slice(start, start + PAGE_SIZE)
+    const tbody = document.getElementById('ppTableBody')
+    if (pageData.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:rgba(0,0,0,0.45)">暂无数据</td></tr>'
+    } else {
+      tbody.innerHTML = pageData.map(row => `
+        <tr>
+          <td><span class="ellipsis" title="${row.name}">${row.name}</span></td>
+          <td>${row.category}</td>
+          <td>${row.level}</td>
+          <td><span class="status-dot ${row.status ? 'status-published' : 'status-unpublished'}"></span>${row.status ? '已发布' : '未发布'}</td>
+          <td>${row.updateTime}</td>
+          <td>
+            <span class="action-link" onclick="enterPP(${row.id})">进入</span>
+            <span class="action-link" onclick="toggleStatus(${row.id})">${row.status ? '撤回' : '发布'}</span>
+            <span class="action-link danger" onclick="openDeleteModal(${row.id}, '${row.name}')">删除</span>
+          </td>
+        </tr>
+      `).join('')
+    }
+    renderPagination()
+  }
+
+  function renderPagination() {
+    const total = tableData.length
+    const totalPages = Math.ceil(total / PAGE_SIZE)
+    const pg = document.getElementById('pagination')
+    if (totalPages <= 1) { pg.innerHTML = ''; return; }
+    let html = `<span class="page-info">共 ${total} 条</span>`
+    html += `<div class="page-btn" onclick="changePage(${currentPage-1})">‹</div>`
+    for (let i = 1; i <= totalPages; i++) {
+      html += `<div class="page-btn ${i===currentPage?'active':''}" onclick="changePage(${i})">${i}</div>`
+    }
+    html += `<div class="page-btn" onclick="changePage(${currentPage+1})">›</div>`
+    pg.innerHTML = html
+  }
+
+  function changePage(p) {
+    const total = Math.ceil(tableData.length / PAGE_SIZE)
+    if (p < 1 || p > total) return
+    currentPage = p
+    renderTable()
+  }
+
+  function filterTable() {
+    const name = document.getElementById('filterName').value.trim().toLowerCase()
+    const cat = document.getElementById('filterCategory').value
+    const level = document.getElementById('filterLevel').value
+    const status = document.getElementById('filterStatus').value
+    tableData = mockData.filter(r => {
+      if (name && !r.name.toLowerCase().includes(name)) return false
+      if (cat && r.category !== cat) return false
+      if (level && r.level !== level) return false
+      if (status !== '' && String(r.status) !== status) return false
+      return true
+    })
+    currentPage = 1
+    renderTable()
+  }
+
+  function resetFilter() {
+    document.getElementById('filterName').value = ''
+    document.getElementById('filterCategory').value = ''
+    document.getElementById('filterLevel').value = ''
+    document.getElementById('filterStatus').value = ''
+    tableData = [...mockData]
+    currentPage = 1
+    renderTable()
+  }
+
+  function updateLevelOptions() {
+    const cat = document.getElementById('ppCategory').value
+    const sel = document.getElementById('ppLevel')
+    const levels = levelMap[cat] || []
+    sel.innerHTML = levels.length
+      ? levels.map(l => `<option value="${l}">${l}</option>`).join('')
+      : '<option value="">请先选择认证类型</option>'
+  }
+
+  function openAddModal() {
+    document.getElementById('modalTitle').textContent = '创建PP'
+    document.getElementById('ppName').value = ''
+    document.getElementById('ppCategory').value = ''
+    document.getElementById('ppLevel').innerHTML = '<option value="">请先选择认证类型</option>'
+    document.getElementById('addModal').classList.add('open')
+  }
+
+  function confirmAdd() {
+    const name = document.getElementById('ppName').value.trim()
+    const cat = document.getElementById('ppCategory')
+    const level = document.getElementById('ppLevel').value
+    if (!name || !cat.value || !level) return
+    const catText = cat.options[cat.selectedIndex].text
+    const newId = Math.max(...mockData.map(r=>r.id)) + 1
+    const newRow = { id: newId, name, category: catText, level, status: 0, updateTime: new Date().toISOString().slice(0,10) }
+    mockData.unshift(newRow)
+    tableData = [...mockData]
+    renderTable()
+    closeModal('addModal')
+  }
+
+  function openDeleteModal(id, name) {
+    deleteId = id
+    document.getElementById('deleteContent').textContent = `确定要删除PP"${name}"吗？删除后无法恢复`
+    document.getElementById('deleteModal').classList.add('open')
+  }
+
+  function confirmDelete() {
+    const idx = mockData.findIndex(r => r.id === deleteId)
+    if (idx > -1) mockData.splice(idx, 1)
+    tableData = [...mockData]
+    renderTable()
+    closeModal('deleteModal')
+  }
+
+  function toggleStatus(id) {
+    const row = mockData.find(r => r.id === id)
+    if (row) { row.status = row.status ? 0 : 1; tableData = [...mockData]; renderTable() }
+  }
+
+  function enterPP(id) { alert('进入PP编辑页 (id: ' + id + ')') }
+
+  function closeModal(id) { document.getElementById(id).classList.remove('open') }
+
+  renderTable()
+</script>
+</body>
+</html>

@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>全部文档 - W-CaaS</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      font-size: 14px;
+      color: rgba(0,0,0,0.85);
+      background: #f5fafc;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* === 侧边栏 === */
+    .sidebar {
+      position: fixed;
+      left: 0; top: 0; bottom: 0;
+      width: 240px;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #f0f0f0;
+      z-index: 100;
+    }
+
+    .sidebar-back {
+      height: 40px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px 8px 12px;
+      font-size: 16px;
+      font-weight: 500;
+      color: rgba(0,0,0,0.85);
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .sidebar-back:hover { color: #1890ff; }
+    .sidebar-back svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    .sidebar-menu {
+      flex: 1;
+      padding: 12px 0 0;
+      overflow-y: auto;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 16px 0 24px;
+      height: 40px;
+      cursor: pointer;
+      color: rgba(0,0,0,0.85);
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .menu-item:hover { background: #e6f7ff; color: #1890ff; }
+    .menu-item.active { background: #e6f7ff; color: #1890ff; font-weight: 500; }
+    .menu-item svg { flex-shrink: 0; width: 16px; height: 16px; }
+
+    .sidebar-footer {
+      padding: 16px 24px;
+      border-top: 1px solid #f0f0f0;
+    }
+    .btn-archive {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: rgba(0,0,0,0.65);
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .btn-archive:hover { color: #fa8c16; }
+
+    /* === 主区域 === */
+    .main {
+      margin-left: 240px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    /* === 顶部栏 === */
+    .top-bar {
+      position: fixed;
+      top: 0; left: 240px; right: 0;
+      height: 50px;
+      background: #fff;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 99;
+    }
+    .project-title { display: flex; align-items: center; gap: 12px; }
+    .project-name { font-size: 16px; font-weight: 600; color: rgba(0,0,0,0.85); }
+    .ant-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      font-size: 12px;
+      border-radius: 2px;
+      border: 1px solid #d9d9d9;
+      color: rgba(0,0,0,0.85);
+      background: #fff;
+      line-height: 20px;
+    }
+    .top-bar-right { display: flex; align-items: center; gap: 16px; }
+    .bell-wrap { position: relative; cursor: pointer; }
+    .bell-badge {
+      position: absolute;
+      top: -6px; right: -10px;
+      background: #ff4d4f;
+      color: #fff;
+      font-size: 10px;
+      min-width: 18px; height: 18px;
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 4px; line-height: 1;
+    }
+    .user-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: #1890ff;
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 500;
+      cursor: pointer;
+    }
+
+    /* === 内容区 === */
+    .page-content {
+      margin-top: 50px;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      min-height: calc(100vh - 50px);
+    }
+
+    /* === 工具栏 === */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border: 1px solid #d9d9d9;
+      border-radius: 4px;
+      padding: 6px 12px;
+      width: 260px;
+      transition: border-color 0.2s;
+    }
+    .search-box:focus-within { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.2); }
+    .search-box svg { color: rgba(0,0,0,0.45); flex-shrink: 0; }
+    .search-box input {
+      border: none; outline: none;
+      font-size: 14px; color: rgba(0,0,0,0.85);
+      background: transparent; flex: 1;
+      min-width: 0;
+    }
+    .search-box input::placeholder { color: rgba(0,0,0,0.35); }
+
+    .toolbar-right { display: flex; align-items: center; gap: 12px; }
+    .selected-count { font-size: 14px; color: rgba(0,0,0,0.65); }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 15px;
+      font-size: 14px;
+      border-radius: 4px;
+      border: 1px solid #d9d9d9;
+      background: #fff;
+      color: rgba(0,0,0,0.85);
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      line-height: 22px;
+    }
+    .btn:hover:not(:disabled) { border-color: #40a9ff; color: #40a9ff; }
+    .btn:disabled, .btn.disabled {
+      color: rgba(0,0,0,0.25);
+      border-color: #d9d9d9;
+      background: #f5f5f5;
+      cursor: not-allowed;
+    }
+    .btn-primary {
+      background: #1890ff;
+      border-color: #1890ff;
+      color: #fff;
+    }
+    .btn-primary:hover:not(:disabled) { background: #40a9ff; border-color: #40a9ff; color: #fff; }
+    .btn-danger:hover:not(:disabled) { border-color: #ff4d4f; color: #ff4d4f; }
+
+    /* === 新建文档下拉 === */
+    .new-doc-wrap { position: relative; }
+    .new-doc-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      background: #fff;
+      border-radius: 4px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.15);
+      border: 1px solid #f0f0f0;
+      z-index: 200;
+      min-width: 130px;
+    }
+    .new-doc-dropdown.open { display: block; }
+    .dropdown-item {
+      padding: 8px 16px;
+      font-size: 14px;
+      color: rgba(0,0,0,0.85);
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .dropdown-item:hover { background: #f5f5f5; color: #1890ff; }
+
+    /* === 表格区域 === */
+    .table-card {
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    thead tr {
+      background: #fafafa;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    thead th {
+      padding: 12px 16px;
+      font-weight: 500;
+      color: rgba(0,0,0,0.85);
+      text-align: left;
+      white-space: nowrap;
+    }
+    tbody tr {
+      border-bottom: 1px solid #f0f0f0;
+      transition: background 0.15s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #fafeff; }
+    tbody td {
+      padding: 14px 16px;
+      color: rgba(0,0,0,0.85);
+      vertical-align: top;
+    }
+
+    .doc-name-link {
+      color: rgba(0,0,0,0.85);
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    .doc-name-link:hover { color: #1890ff; }
+
+    .creator-link {
+      color: rgba(0,0,0,0.85);
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    .creator-link:hover { color: #1890ff; }
+
+    .time-cell { color: rgba(0,0,0,0.65); }
+
+    /* 操作列按钮 */
+    .op-cell { display: flex; align-items: center; gap: 0; }
+    .op-btn {
+      font-size: 14px;
+      color: #1890ff;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 3px;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .op-btn:hover { background: #e6f7ff; }
+
+    /* === 日志 tooltip === */
+    .log-wrapper { position: relative; display: inline-block; }
+    .log-tooltip {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      background: rgba(0,0,0,0.88);
+      color: #fff;
+      border-radius: 6px;
+      padding: 12px 16px;
+      min-width: 240px;
+      z-index: 500;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      font-size: 13px;
+    }
+    .log-tooltip::before {
+      content: '';
+      position: absolute;
+      bottom: 100%; right: 20px;
+      border: 6px solid transparent;
+      border-bottom-color: rgba(0,0,0,0.88);
+    }
+    .log-tooltip.open { display: block; }
+    .log-tooltip-title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+    .log-entry {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 4px 0;
+      font-size: 12px;
+    }
+    .log-entry-type {
+      color: rgba(255,255,255,0.65);
+      min-width: 56px;
+      flex-shrink: 0;
+    }
+    .log-entry-time { color: rgba(255,255,255,0.85); flex-shrink: 0; }
+    .log-entry-desc { color: #fff; }
+
+    /* === 分页 === */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      padding: 16px 16px;
+      background: #fff;
+      border-top: 1px solid #f0f0f0;
+    }
+    .page-total { font-size: 14px; color: rgba(0,0,0,0.65); margin-right: 8px; }
+    .page-btn {
+      min-width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid #d9d9d9;
+      background: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      color: rgba(0,0,0,0.85);
+      padding: 0 6px;
+      transition: all 0.2s;
+    }
+    .page-btn:hover:not(.disabled):not(.active) { border-color: #1890ff; color: #1890ff; }
+    .page-btn.active { border-color: #1890ff; color: #1890ff; background: #fff; font-weight: 500; }
+    .page-btn.disabled { color: rgba(0,0,0,0.25); border-color: #d9d9d9; cursor: not-allowed; background: #f5f5f5; }
+
+    /* === Modal 通用 === */
+    .modal-mask {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-mask.open { display: flex; }
+
+    .modal-box {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 6px 32px rgba(0,0,0,0.18);
+      min-width: 440px;
+      max-width: 90vw;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .modal-title { font-size: 16px; font-weight: 600; color: rgba(0,0,0,0.85); }
+    .modal-close {
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 4px;
+      cursor: pointer;
+      color: rgba(0,0,0,0.45);
+      font-size: 16px;
+      transition: all 0.15s;
+    }
+    .modal-close:hover { background: #f5f5f5; color: rgba(0,0,0,0.85); }
+
+    .modal-body { padding: 24px; }
+    .modal-footer {
+      padding: 12px 24px;
+      border-top: 1px solid #f0f0f0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    /* 表单 */
+    .form-item { margin-bottom: 20px; }
+    .form-label {
+      display: block;
+      font-size: 14px;
+      color: rgba(0,0,0,0.85);
+      margin-bottom: 8px;
+    }
+    .form-input {
+      width: 100%;
+      height: 36px;
+      border: 1px solid #d9d9d9;
+      border-radius: 4px;
+      padding: 0 12px;
+      font-size: 14px;
+      color: rgba(0,0,0,0.85);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.2); }
+    .form-input::placeholder { color: rgba(0,0,0,0.35); }
+    .form-error {
+      font-size: 12px;
+      color: #ff4d4f;
+      margin-top: 4px;
+      min-height: 20px;
+    }
+
+    /* === 设置跟进成员 Modal === */
+    .follow-desc {
+      font-size: 13px;
+      color: rgba(0,0,0,0.65);
+      margin-bottom: 16px;
+      line-height: 1.6;
+    }
+    .member-tags-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid #d9d9d9;
+      border-radius: 4px;
+      padding: 6px 8px;
+      min-height: 40px;
+      background: #fff;
+      cursor: text;
+    }
+    .member-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #f0f0f0;
+      border-radius: 2px;
+      padding: 2px 6px;
+      font-size: 13px;
+      color: rgba(0,0,0,0.85);
+    }
+    .member-tag-remove {
+      cursor: pointer;
+      color: rgba(0,0,0,0.45);
+      font-size: 12px;
+      line-height: 1;
+      transition: color 0.15s;
+    }
+    .member-tag-remove:hover { color: rgba(0,0,0,0.85); }
+    .member-input {
+      flex: 1;
+      min-width: 80px;
+      border: none;
+      outline: none;
+      font-size: 13px;
+      color: rgba(0,0,0,0.85);
+      background: transparent;
+    }
+    .member-input::placeholder { color: rgba(0,0,0,0.35); }
+    .member-suggest {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0; right: 0;
+      background: #fff;
+      border-radius: 4px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+      border: 1px solid #e8e8e8;
+      z-index: 300;
+    }
+    .member-suggest.open { display: block; }
+    .suggest-item {
+      padding: 8px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      color: rgba(0,0,0,0.85);
+      transition: background 0.15s;
+    }
+    .suggest-item:hover { background: #f0f7ff; color: #1890ff; }
+
+    /* === 新建模板文档 抽屉 === */
+    .drawer-mask {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.35);
+      z-index: 900;
+    }
+    .drawer-mask.open { display: block; }
+    .drawer {
+      position: fixed;
+      top: 0; right: -600px; bottom: 0;
+      width: 560px;
+      background: #fff;
+      box-shadow: -4px 0 20px rgba(0,0,0,0.1);
+      z-index: 901;
+      display: flex;
+      flex-direction: column;
+      transition: right 0.3s ease;
+    }
+    .drawer.open { right: 0; }
+
+    .drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      border-bottom: 1px solid #f0f0f0;
+      flex-shrink: 0;
+    }
+    .drawer-title { font-size: 16px; font-weight: 600; color: rgba(0,0,0,0.85); }
+    .drawer-close {
+      cursor: pointer;
+      color: rgba(0,0,0,0.45);
+      font-size: 18px;
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 4px;
+      transition: all 0.15s;
+    }
+    .drawer-close:hover { background: #f5f5f5; color: rgba(0,0,0,0.85); }
+
+    .drawer-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      border-bottom: 1px solid #f0f0f0;
+      flex-shrink: 0;
+    }
+    .selected-label { font-size: 13px; color: rgba(0,0,0,0.65); }
+
+    .tpl-select-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .tpl-select {
+      height: 36px;
+      min-width: 200px;
+      border: 1px solid #d9d9d9;
+      border-radius: 4px;
+      padding: 0 32px 0 12px;
+      font-size: 14px;
+      color: rgba(0,0,0,0.85);
+      background: #fff;
+      appearance: none;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .tpl-select:focus { border-color: #1890ff; }
+    .tpl-select-arrow {
+      position: absolute;
+      right: 10px;
+      pointer-events: none;
+      color: rgba(0,0,0,0.45);
+    }
+
+    .drawer-body { flex: 1; overflow-y: auto; padding: 0; }
+
+    .tpl-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 0;
+      color: rgba(0,0,0,0.35);
+      font-size: 14px;
+      gap: 12px;
+    }
+    .tpl-empty svg { opacity: 0.35; }
+
+    .tpl-table { display: none; }
+    .tpl-table.show { display: block; }
+
+    .tpl-table table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    .tpl-table thead th {
+      background: #fafafa;
+      padding: 10px 16px;
+      font-weight: 500;
+      color: rgba(0,0,0,0.85);
+      border-bottom: 1px solid #f0f0f0;
+      text-align: left;
+      white-space: nowrap;
+    }
+    .tpl-table tbody tr { border-bottom: 1px solid #f0f0f0; }
+    .tpl-table tbody td { padding: 10px 16px; vertical-align: middle; }
+
+    .drawer-footer {
+      padding: 12px 24px;
+      border-top: 1px solid #f0f0f0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    /* === 复选框样式 === */
+    input[type="checkbox"] {
+      width: 16px; height: 16px;
+      cursor: pointer;
+      accent-color: #1890ff;
+    }
+
+    /* === 删除确认 tooltip === */
+    .del-confirm {
+      display: none;
+      position: fixed;
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+      border: 1px solid #f0f0f0;
+      padding: 12px 16px;
+      z-index: 600;
+      min-width: 200px;
+    }
+    .del-confirm.open { display: block; }
+    .del-confirm-text { font-size: 14px; color: rgba(0,0,0,0.85); margin-bottom: 12px; }
+    .del-confirm-btns { display: flex; justify-content: flex-end; gap: 8px; }
+    .del-confirm-btns .btn { padding: 3px 10px; font-size: 13px; line-height: 20px; }
+  </style>
+</head>
+<body>
+
+<!-- === 侧边栏 === -->
+<aside class="sidebar">
+  <div class="sidebar-back" onclick="window.location.href='../frontend-outside-cn/projects.html'">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M10 3L5 8l5 5"/>
+    </svg>
+    返回项目列表
+  </div>
+  <nav class="sidebar-menu">
+    <div class="menu-item" onclick="window.location.href='project-overview.html'">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="2" y="2" width="12" height="12" rx="2"/>
+        <path d="M5 6h6M5 9h4"/>
+      </svg>
+      项目信息
+    </div>
+    <div class="menu-item active">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M3 2h7l3 3v9H3z"/>
+        <path d="M10 2v3h3"/>
+        <path d="M5 7h6M5 10h4"/>
+      </svg>
+      认证实施
+    </div>
+    <div class="menu-item" onclick="location.href='trash.html'">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M3 3h10v2H3zM5 7l-2 6h10L11 7z"/>
+        <path d="M6 9.5h4"/>
+      </svg>
+      回收站
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="btn-archive">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M2 4h12v1.5L8 9 2 5.5z"/>
+        <path d="M2 5.5v7h12v-7"/>
+      </svg>
+      归档项���
+    </div>
+  </div>
+</aside>
+
+<!-- === 主区域 === -->
+<div class="main">
+  <!-- 顶部栏 -->
+  <div class="top-bar">
+    <div class="project-title">
+      <span class="project-name">UI测试</span>
+      <span class="ant-tag">评估保障级（EAL）-2024</span>
+      <span class="ant-tag">EAL4</span>
+    </div>
+    <div class="top-bar-right">
+      <div class="bell-wrap">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="rgba(0,0,0,0.65)" stroke-width="1.5">
+          <path d="M10 2a6 6 0 0 1 6 6v3.5l1.5 2.5H2.5L4 11.5V8a6 6 0 0 1 6-6z"/>
+          <path d="M8 16a2 2 0 0 0 4 0"/>
+        </svg>
+        <span class="bell-badge">38</span>
+      </div>
+      <div class="user-avatar">章</div>
+    </div>
+  </div>
+
+  <!-- 内容区 -->
+  <div class="page-content">
+
+    <!-- 工具栏 -->
+    <div class="toolbar">
+      <div class="search-box">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="6" cy="6" r="4"/>
+          <path d="M9 9l3 3"/>
+        </svg>
+        <input type="text" id="searchInput" placeholder="按文档名称搜索" oninput="handleSearch()" />
+      </div>
+      <div class="toolbar-right">
+        <span class="selected-count" id="selectedCount">已选 0 项</span>
+        <button class="btn btn-danger disabled" id="delBtn" disabled onclick="openDelConfirm(event)">删 除</button>
+        <button class="btn disabled" id="exportBtn" disabled onclick="alert('功能开发中')">导出Word</button>
+        <div class="new-doc-wrap">
+          <button class="btn btn-primary" onclick="toggleNewDocDropdown(event)">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M7 2v10M2 7h10"/>
+            </svg>
+            新建文档
+          </button>
+          <div class="new-doc-dropdown" id="newDocDropdown">
+            <div class="dropdown-item" onclick="openBlankModal()">空白文档</div>
+            <div class="dropdown-item" onclick="openTemplateDrawer()">从模板新建</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 表格 -->
+    <div class="table-card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:44px">
+                <input type="checkbox" id="selectAll" onchange="toggleSelectAll()" />
+              </th>
+              <th>文档名称</th>
+              <th style="width:100px">版本号</th>
+              <th style="width:100px">创建者</th>
+              <th style="width:110px">最近修改者</th>
+              <th style="width:110px">修改时间</th>
+              <th style="width:180px">操作</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+</div>
+
+<!-- === 新建空白文档 Modal === -->
+<div class="modal-mask" id="blankModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">新建空白文档</span>
+      <span class="modal-close" onclick="closeBlankModal()">✕</span>
+    </div>
+    <div class="modal-body">
+      <div class="form-item">
+        <label class="form-label">文档标题 ：</label>
+        <input class="form-input" id="blankDocTitle" placeholder="请输入文档标题" oninput="validateBlankTitle()" />
+        <div class="form-error" id="blankTitleError"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeBlankModal()">取 消</button>
+      <button class="btn btn-primary" id="blankConfirmBtn" disabled onclick="confirmBlankDoc()">确 定</button>
+    </div>
+  </div>
+</div>
+
+<!-- === 从模板新建 抽屉 === -->
+<div class="drawer-mask" id="drawerMask" onclick="closeTemplateDrawer()"></div>
+<div class="drawer" id="templateDrawer">
+  <div class="drawer-header">
+    <span class="drawer-title">新建模板文档</span>
+    <span class="drawer-close" onclick="closeTemplateDrawer()">✕</span>
+  </div>
+  <div class="drawer-toolbar">
+    <span class="selected-label" id="tplSelectedLabel">已选中 0/0 项</span>
+    <div class="tpl-select-wrap">
+      <select class="tpl-select" id="tplSelect" onchange="handleTplChange()">
+        <option value="">下拉选择模板</option>
+        <option value="eal5">CCRC-EAL5通用模板</option>
+        <option value="eal4">CCRC-EAL4通用模板</option>
+        <option value="test">测试文档模版</option>
+      </select>
+      <svg class="tpl-select-arrow" width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+        <path d="M2 4l4 5 4-5z"/>
+      </svg>
+    </div>
+  </div>
+  <div class="drawer-body">
+    <!-- 空状态 -->
+    <div class="tpl-empty" id="tplEmpty">
+      <svg width="80" height="80" viewBox="0 0 80 80" fill="none" stroke="rgba(0,0,0,0.45)" stroke-width="2">
+        <rect x="20" y="10" width="40" height="50" rx="3"/>
+        <path d="M30 25h20M30 33h20M30 41h12"/>
+        <circle cx="56" cy="56" r="12" fill="#f5f5f5" stroke="rgba(0,0,0,0.45)"/>
+        <path d="M52 56h8M56 52v8"/>
+      </svg>
+      <span>请选择文档模板</span>
+    </div>
+    <!-- 文档列表 -->
+    <div class="tpl-table" id="tplTable">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:44px"><input type="checkbox" id="tplSelectAll" onchange="toggleTplSelectAll()" /></th>
+            <th>文档名称</th>
+            <th style="width:80px">操作</th>
+          </tr>
+        </thead>
+        <tbody id="tplTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn" onclick="closeTemplateDrawer()">取 消</button>
+    <button class="btn btn-primary" id="tplConfirmBtn" onclick="confirmTemplateDoc()">确 定</button>
+  </div>
+</div>
+
+<!-- === 设置文档跟进成员 Modal === -->
+<div class="modal-mask" id="followModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">设置文档跟进成员</span>
+      <span class="modal-close" onclick="closeFollowModal()">✕</span>
+    </div>
+    <div class="modal-body">
+      <p class="follow-desc">将评测机构人员在此文档下的批注消息推送给以下项目成员：</p>
+      <div class="member-tags-wrap" id="memberTagsWrap" onclick="focusMemberInput()">
+        <span class="member-tag" id="tag-崔刚">
+          崔刚
+          <span class="member-tag-remove" onclick="removeTag('崔刚')">✕</span>
+        </span>
+        <input class="member-input" id="memberInput" placeholder="搜索添加成员" oninput="handleMemberInput()" onfocus="showSuggest()" onblur="hideSuggest()" />
+        <div class="member-suggest" id="memberSuggest">
+          <div class="suggest-item" onmousedown="addTag('章喆')">章喆</div>
+          <div class="suggest-item" onmousedown="addTag('崔刚')">崔刚</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeFollowModal()">取 消</button>
+      <button class="btn btn-primary" onclick="confirmFollowModal()">确 定</button>
+    </div>
+  </div>
+</div>
+
+<!-- === 删除确认弹出 === -->
+<div class="del-confirm" id="delConfirm">
+  <div class="del-confirm-text">确认删除所选文档？</div>
+  <div class="del-confirm-btns">
+    <button class="btn" onclick="closeDelConfirm()">取 消</button>
+    <button class="btn" style="background:#ff4d4f;border-color:#ff4d4f;color:#fff;" onclick="confirmDelete()">确 认</button>
+  </div>
+</div>
+
+<script>
+/* === Mock 数据 === */
+const DOCS = [
+  { id: 1, name: '有序/无序列表测试', version: '-', creator: '崔刚', lastEditor: '章喆', editTime: '2026-03-29 09:03', editTimeRel: '4分钟前',
+    logs: [{ type: '创建文档', time: '2025-11-12 16:41:52', desc: '创建文档' }] },
+  { id: 2, name: 'ASE_ST 安全目标文档', version: 'v1.0', creator: '章喆', lastEditor: '章喆', editTime: '2026-03-20 14:22', editTimeRel: '9天前',
+    logs: [{ type: '编辑文档', time: '2026-03-20 14:22:05', desc: '更新安全目标章节' }, { type: '创建文档', time: '2025-12-01 09:10:00', desc: '创建文档' }] },
+  { id: 3, name: 'ADV_ARC 安全架构说明书', version: 'v2.1', creator: '崔刚', lastEditor: '崔刚', editTime: '2026-03-18 10:55', editTimeRel: '11天前',
+    logs: [{ type: '版本升级', time: '2026-03-18 10:55:30', desc: '升级至v2.1' }, { type: '创建文档', time: '2025-11-20 11:00:00', desc: '创建文档' }] },
+  { id: 4, name: 'AGD_OPE_PRE 指导性说明', version: 'v1.2', creator: '章喆', lastEditor: '崔刚', editTime: '2026-03-15 16:30', editTimeRel: '14天前',
+    logs: [{ type: '编辑文档', time: '2026-03-15 16:30:00', desc: '修订操作说明' }, { type: '创建文档', time: '2025-12-10 08:00:00', desc: '创建文档' }] },
+  { id: 5, name: 'ALC_DEL 交付说明书', version: '-', creator: '崔刚', lastEditor: '崔刚', editTime: '2026-03-10 09:15', editTimeRel: '19天前',
+    logs: [{ type: '创建文档', time: '2026-03-10 09:15:00', desc: '创建文档' }] },
+  { id: 6, name: 'ALC_DVS 开发安全文档', version: 'v1.0', creator: '章喆', lastEditor: '章喆', editTime: '2026-03-05 11:40', editTimeRel: '24天前',
+    logs: [{ type: '编辑文档', time: '2026-03-05 11:40:00', desc: '补充开发安全策略' }, { type: '创建文档', time: '2025-12-20 15:00:00', desc: '创建文档' }] },
+  { id: 7, name: 'ADV_FSP 功能规范（EAL4）', version: 'v3.0', creator: '崔刚', lastEditor: '章喆', editTime: '2026-02-28 13:20', editTimeRel: '29天前',
+    logs: [{ type: '版本升级', time: '2026-02-28 13:20:00', desc: '升级至v3.0，新增接口描述' }, { type: '创建文档', time: '2025-10-15 10:00:00', desc: '创建文档' }] },
+];
+
+const TPL_DOCS = {
+  eal4: [
+    'ASE_ST 安全目标（EAL2-EAL7）',
+    'ADV_ARC 安全架构（EAL2-EAL7）',
+    'ADV_IMP 实现表示（EAL4-EAL5）',
+    'AGD_OPE_PRE 指导性说明（EAL1-EAL7）',
+    'ALC_DEL 交付说明书（EAL2-EAL7）',
+    'ALC_DVS 开发安全（EAL3-EAL5）',
+    'ALC_LCD 安全周期定义（EAL3-EAL6）',
+    '配置项清单',
+    'ADV_FSP 功能规范（EAL4）',
+    'ADV_TDS TOE设计（EAL4）',
+    'ALC_TAT 工具和技术（EAL4）',
+    'ATE_FUN_COV_DPT 测试规范说明（EAL3-EAL4）',
+    'ALC_CMC_CMS 配置管理能力及范围（EAL4）',
+  ],
+  eal5: [
+    'ASE_ST 安全目标（EAL2-EAL7）',
+    'ADV_ARC 安全架构（EAL2-EAL7）',
+    'ADV_IMP 实现表示（EAL4-EAL5）',
+    'ADV_INT 实现表示内部结构（EAL5-EAL6）',
+    'AGD_OPE_PRE 指导性说明（EAL1-EAL7）',
+    'ALC_DEL 交付说明书（EAL2-EAL7）',
+    'ALC_DVS 开发安全（EAL3-EAL5）',
+    'ALC_LCD 安全周期定义（EAL3-EAL6）',
+    '配置项清单',
+    'ADV_FSP 功能规范（EAL5）',
+    'ADV_TDS TOE设计（EAL5）',
+    'ALC_TAT 工具和技术（EAL5）',
+    'ATE_FUN_COV_DPT 测试规范说明（EAL3-EAL4）',
+    'ALC_CMC_CMS 配置管理能力及范围（EAL5）',
+    'AVA_VAN 脆弱性分析（EAL5）',
+  ],
+  test: [
+    '测试模板文档一',
+    '测试模板文档二',
+    '测试模板文档三',
+  ],
+};
+
+/* === 状态 === */
+let filteredDocs = [...DOCS];
+let selectedIds = new Set();
+let currentPage = 1;
+const pageSize = 10;
+let openLogId = null;
+let tplChecked = new Set();
+let followTags = new Set(['崔刚']);
+
+/* === 渲染 === */
+function render() {
+  renderTable();
+  renderPagination();
+  updateSelectionUI();
+}
+
+function renderTable() {
+  const start = (currentPage - 1) * pageSize;
+  const pageData = filteredDocs.slice(start, start + pageSize);
+  const tbody = document.getElementById('tableBody');
+
+  if (pageData.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:rgba(0,0,0,0.35);">暂无文档</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = pageData.map(doc => {
+    const checked = selectedIds.has(doc.id) ? 'checked' : '';
+    const isLogOpen = openLogId === doc.id;
+    const logsHtml = doc.logs.map(l =>
+      `<div class="log-entry">
+        <span class="log-entry-type">${l.type}</span>
+        <span class="log-entry-time">${l.time}</span>
+        <span class="log-entry-desc">${l.desc}</span>
+      </div>`
+    ).join('');
+    return `
+      <tr data-id="${doc.id}">
+        <td><input type="checkbox" ${checked} onchange="toggleRow(${doc.id})" /></td>
+        <td><span class="doc-name-link" onclick="location.href='doc.html'">${doc.name}</span></td>
+        <td>${doc.version}</td>
+        <td><span class="creator-link">${doc.creator}</span></td>
+        <td>${doc.lastEditor}</td>
+        <td class="time-cell" title="${doc.editTime}">${doc.editTimeRel}</td>
+        <td>
+          <div class="op-cell">
+            <button class="op-btn" onclick="openFollowModal()">设置跟进成员</button>
+            <div class="log-wrapper">
+              <button class="op-btn" onclick="toggleLog(event, ${doc.id})">查看日志</button>
+              <div class="log-tooltip ${isLogOpen ? 'open' : ''}" id="logTooltip-${doc.id}">
+                <div class="log-tooltip-title">日志详情</div>
+                ${logsHtml}
+              </div>
+            </div>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderPagination() {
+  const total = filteredDocs.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const pag = document.getElementById('pagination');
+  const prevDisabled = currentPage <= 1 ? 'disabled' : '';
+  const nextDisabled = currentPage >= totalPages ? 'disabled' : '';
+
+  let pageNums = '';
+  for (let i = 1; i <= totalPages; i++) {
+    pageNums += `<div class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goPage(${i})">${i}</div>`;
+  }
+
+  pag.innerHTML = `
+    <span class="page-total">共 ${total} 个文档</span>
+    <div class="page-btn ${prevDisabled}" onclick="goPage(${currentPage - 1})">‹</div>
+    ${pageNums}
+    <div class="page-btn ${nextDisabled}" onclick="goPage(${currentPage + 1})">›</div>
+  `;
+}
+
+function updateSelectionUI() {
+  const count = selectedIds.size;
+  document.getElementById('selectedCount').textContent = `已选 ${count} 项`;
+  const delBtn = document.getElementById('delBtn');
+  const exportBtn = document.getElementById('exportBtn');
+  if (count > 0) {
+    delBtn.disabled = false;
+    delBtn.classList.remove('disabled');
+    exportBtn.disabled = false;
+    exportBtn.classList.remove('disabled');
+  } else {
+    delBtn.disabled = true;
+    delBtn.classList.add('disabled');
+    exportBtn.disabled = true;
+    exportBtn.classList.add('disabled');
+  }
+  // Sync select-all checkbox
+  const allOnPage = filteredDocs.slice((currentPage-1)*pageSize, currentPage*pageSize);
+  const allChecked = allOnPage.length > 0 && allOnPage.every(d => selectedIds.has(d.id));
+  document.getElementById('selectAll').checked = allChecked;
+}
+
+/* === 事件绑定 === */
+function handleSearch() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  filteredDocs = q ? DOCS.filter(d => d.name.toLowerCase().includes(q)) : [...DOCS];
+  selectedIds.clear();
+  currentPage = 1;
+  render();
+}
+
+function toggleSelectAll() {
+  const allOnPage = filteredDocs.slice((currentPage-1)*pageSize, currentPage*pageSize);
+  const allChecked = document.getElementById('selectAll').checked;
+  allOnPage.forEach(d => allChecked ? selectedIds.add(d.id) : selectedIds.delete(d.id));
+  render();
+}
+
+function toggleRow(id) {
+  if (selectedIds.has(id)) selectedIds.delete(id);
+  else selectedIds.add(id);
+  updateSelectionUI();
+}
+
+function goPage(p) {
+  const total = Math.max(1, Math.ceil(filteredDocs.length / pageSize));
+  if (p < 1 || p > total) return;
+  currentPage = p;
+  render();
+}
+
+function toggleLog(e, id) {
+  e.stopPropagation();
+  openLogId = openLogId === id ? null : id;
+  renderTable();
+}
+
+document.addEventListener('click', function(e) {
+  // Close log tooltip
+  if (!e.target.closest('.log-wrapper')) {
+    if (openLogId !== null) { openLogId = null; renderTable(); }
+  }
+  // Close new-doc dropdown
+  if (!e.target.closest('.new-doc-wrap')) {
+    document.getElementById('newDocDropdown').classList.remove('open');
+  }
+  // Close del confirm
+  if (!e.target.closest('.del-confirm') && !e.target.closest('#delBtn')) {
+    closeDelConfirm();
+  }
+});
+
+/* === 新建文档下拉 === */
+function toggleNewDocDropdown(e) {
+  e.stopPropagation();
+  document.getElementById('newDocDropdown').classList.toggle('open');
+}
+
+/* === 新建空白文档 Modal === */
+function openBlankModal() {
+  document.getElementById('newDocDropdown').classList.remove('open');
+  document.getElementById('blankDocTitle').value = '';
+  document.getElementById('blankTitleError').textContent = '';
+  document.getElementById('blankConfirmBtn').disabled = true;
+  document.getElementById('blankModal').classList.add('open');
+}
+function closeBlankModal() {
+  document.getElementById('blankModal').classList.remove('open');
+}
+function validateBlankTitle() {
+  const val = document.getElementById('blankDocTitle').value.trim();
+  const btn = document.getElementById('blankConfirmBtn');
+  if (!val) {
+    document.getElementById('blankTitleError').textContent = '请输入文档标题';
+    btn.disabled = true;
+  } else {
+    document.getElementById('blankTitleError').textContent = '';
+    btn.disabled = false;
+  }
+}
+function confirmBlankDoc() {
+  const title = document.getElementById('blankDocTitle').value.trim();
+  if (!title) return;
+  const newDoc = {
+    id: Date.now(),
+    name: title, version: '-', creator: '章喆', lastEditor: '章喆',
+    editTime: '刚刚', editTimeRel: '刚刚',
+    logs: [{ type: '创建文档', time: new Date().toLocaleString('zh-CN'), desc: '创建文档' }]
+  };
+  DOCS.unshift(newDoc);
+  filteredDocs = [...DOCS];
+  currentPage = 1;
+  render();
+  closeBlankModal();
+}
+
+/* === 从模板新建 抽屉 === */
+let tplDocList = [];
+function openTemplateDrawer() {
+  document.getElementById('newDocDropdown').classList.remove('open');
+  document.getElementById('tplSelect').value = '';
+  document.getElementById('tplEmpty').style.display = '';
+  document.getElementById('tplTable').classList.remove('show');
+  document.getElementById('tplSelectedLabel').textContent = '已选中 0/0 项';
+  tplChecked.clear();
+  tplDocList = [];
+  document.getElementById('drawerMask').classList.add('open');
+  document.getElementById('templateDrawer').classList.add('open');
+}
+function closeTemplateDrawer() {
+  document.getElementById('drawerMask').classList.remove('open');
+  document.getElementById('templateDrawer').classList.remove('open');
+}
+function handleTplChange() {
+  const val = document.getElementById('tplSelect').value;
+  if (!val) {
+    document.getElementById('tplEmpty').style.display = '';
+    document.getElementById('tplTable').classList.remove('show');
+    tplDocList = [];
+    tplChecked.clear();
+    document.getElementById('tplSelectedLabel').textContent = '已选中 0/0 项';
+    return;
+  }
+  tplDocList = TPL_DOCS[val] || [];
+  tplChecked = new Set(tplDocList.map((_, i) => i));
+  document.getElementById('tplEmpty').style.display = 'none';
+  document.getElementById('tplTable').classList.add('show');
+  renderTplTable();
+}
+function renderTplTable() {
+  const total = tplDocList.length;
+  const sel = tplChecked.size;
+  document.getElementById('tplSelectedLabel').textContent = `已选中 ${sel}/${total} 项`;
+  document.getElementById('tplSelectAll').checked = sel === total && total > 0;
+  document.getElementById('tplTableBody').innerHTML = tplDocList.map((name, i) => `
+    <tr>
+      <td><input type="checkbox" ${tplChecked.has(i) ? 'checked' : ''} onchange="toggleTplRow(${i})" /></td>
+      <td>${name}</td>
+      <td><button class="op-btn" onclick="alert('预览：${name}')">预览</button></td>
+    </tr>
+  `).join('');
+}
+function toggleTplSelectAll() {
+  const checked = document.getElementById('tplSelectAll').checked;
+  tplChecked = checked ? new Set(tplDocList.map((_, i) => i)) : new Set();
+  renderTplTable();
+}
+function toggleTplRow(i) {
+  if (tplChecked.has(i)) tplChecked.delete(i);
+  else tplChecked.add(i);
+  renderTplTable();
+}
+function confirmTemplateDoc() {
+  if (tplChecked.size === 0) { alert('请至少选择一个模板文档'); return; }
+  const selected = [...tplChecked].map(i => tplDocList[i]);
+  selected.forEach(name => {
+    DOCS.unshift({
+      id: Date.now() + Math.random(),
+      name, version: '-', creator: '章喆', lastEditor: '章喆',
+      editTime: '刚刚', editTimeRel: '刚刚',
+      logs: [{ type: '创建文档', time: new Date().toLocaleString('zh-CN'), desc: '从模板创建' }]
+    });
+  });
+  filteredDocs = [...DOCS];
+  currentPage = 1;
+  render();
+  closeTemplateDrawer();
+}
+
+/* === 设置文档跟进成员 Modal === */
+function openFollowModal() {
+  // Restore default tags
+  followTags = new Set(['崔刚']);
+  renderFollowTags();
+  document.getElementById('memberInput').value = '';
+  document.getElementById('followModal').classList.add('open');
+}
+function closeFollowModal() {
+  document.getElementById('followModal').classList.remove('open');
+}
+function renderFollowTags() {
+  const wrap = document.getElementById('memberTagsWrap');
+  // Remove old tags
+  wrap.querySelectorAll('.member-tag').forEach(t => t.remove());
+  const inputEl = document.getElementById('memberInput');
+  followTags.forEach(name => {
+    const tag = document.createElement('span');
+    tag.className = 'member-tag';
+    tag.id = `tag-${name}`;
+    tag.innerHTML = `${name}<span class="member-tag-remove" onclick="removeTag('${name}')">✕</span>`;
+    wrap.insertBefore(tag, inputEl);
+  });
+}
+function removeTag(name) {
+  followTags.delete(name);
+  const tag = document.getElementById(`tag-${name}`);
+  if (tag) tag.remove();
+}
+function focusMemberInput() { document.getElementById('memberInput').focus(); }
+function handleMemberInput() { /* filter suggestions */ }
+function showSuggest() { document.getElementById('memberSuggest').classList.add('open'); }
+function hideSuggest() { setTimeout(() => document.getElementById('memberSuggest').classList.remove('open'), 200); }
+function addTag(name) {
+  if (followTags.has(name)) return;
+  followTags.add(name);
+  renderFollowTags();
+  document.getElementById('memberInput').value = '';
+}
+function confirmFollowModal() {
+  closeFollowModal();
+}
+
+/* === 删除确认 === */
+let delConfirmOpen = false;
+function openDelConfirm(e) {
+  if (selectedIds.size === 0) return;
+  e.stopPropagation();
+  const btn = document.getElementById('delBtn');
+  const rect = btn.getBoundingClientRect();
+  const popup = document.getElementById('delConfirm');
+  popup.style.top = (rect.bottom + 8) + 'px';
+  popup.style.left = rect.left + 'px';
+  popup.classList.add('open');
+  delConfirmOpen = true;
+}
+function closeDelConfirm() {
+  document.getElementById('delConfirm').classList.remove('open');
+  delConfirmOpen = false;
+}
+function confirmDelete() {
+  selectedIds.forEach(id => {
+    const idx = DOCS.findIndex(d => d.id === id);
+    if (idx !== -1) DOCS.splice(idx, 1);
+  });
+  filteredDocs = [...DOCS];
+  selectedIds.clear();
+  currentPage = 1;
+  render();
+  closeDelConfirm();
+}
+
+/* === 初始化 === */
+render();
+</script>
+</body>
+</html>

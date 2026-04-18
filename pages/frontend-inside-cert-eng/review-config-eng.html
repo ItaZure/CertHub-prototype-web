@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>Review Config - CertHub</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      font-size: 14px; color: rgba(0,0,0,0.85);
+      background: #f5fafc; display: flex; min-height: 100vh;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      position: fixed; left: 0; top: 0; bottom: 0; width: 240px;
+      background: #fff; display: flex; flex-direction: column;
+      border-right: 1px solid #f0f0f0; z-index: 100;
+    }
+    .sidebar-back {
+      height: 48px; display: flex; align-items: center; gap: 8px;
+      padding: 0 16px 0 12px; font-size: 15px; font-weight: 500;
+      color: rgba(0,0,0,0.85); cursor: pointer;
+      border-bottom: 1px solid #f0f0f0; transition: color 0.2s;
+      text-decoration: none;
+    }
+    .sidebar-back:hover { color: #1890ff; }
+    .sidebar-back svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .sidebar-menu { flex: 1; padding: 8px 0; overflow-y: auto; }
+    .menu-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 0 16px 0 24px; height: 40px;
+      cursor: pointer; color: rgba(0,0,0,0.65); font-size: 14px;
+      transition: all 0.2s; text-decoration: none;
+    }
+    .menu-item:hover { background: #e6f7ff; color: #1890ff; }
+    .menu-item.active { background: #e6f7ff; color: #1890ff; font-weight: 500; }
+    .menu-item svg { flex-shrink: 0; width: 16px; height: 16px; }
+
+    /* ── Top bar ── */
+    .top-bar {
+      position: fixed; top: 0; left: 240px; right: 0; height: 50px;
+      background: #fff; border-bottom: 1px solid #f0f0f0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; z-index: 99;
+    }
+    .project-title { display: flex; align-items: center; gap: 10px; }
+    .project-name { font-size: 15px; font-weight: 600; color: rgba(0,0,0,0.85); }
+    .eal-tag {
+      display: inline-flex; align-items: center; padding: 1px 8px;
+      font-size: 12px; border-radius: 2px; font-weight: 500;
+      border: 1px solid #91d5ff; color: #1890ff; background: #e6f7ff;
+    }
+    .ant-tag {
+      display: inline-flex; align-items: center;
+      padding: 1px 7px; font-size: 12px; border-radius: 2px;
+      border: 1px solid #d9d9d9; color: rgba(0,0,0,0.65);
+      background: #fff; line-height: 20px;
+    }
+    .top-bar-right { display: flex; align-items: center; gap: 16px; }
+    .bell-wrap { position: relative; cursor: pointer; }
+    .bell-badge {
+      position: absolute; top: -5px; right: -8px;
+      background: #ff4d4f; color: #fff; font-size: 10px;
+      min-width: 16px; height: 16px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; padding: 0 3px;
+    }
+    .user-avatar {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: #1890ff; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 500; cursor: pointer;
+    }
+
+    /* ── Main ── */
+    .main { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .page-content {
+      margin-top: 50px; flex: 1; display: flex; overflow: hidden;
+      height: calc(100vh - 50px);
+    }
+
+    /* ── Left tree panel ── */
+    .tree-panel {
+      width: 260px; flex-shrink: 0; background: #fff;
+      border-right: 1px solid #f0f0f0; display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    .tree-panel-header {
+      padding: 14px 16px 10px; border-bottom: 1px solid #f0f0f0; flex-shrink: 0;
+    }
+    .tree-panel-header h3 { font-size: 13px; font-weight: 600; color: rgba(0,0,0,.65); margin-bottom: 8px; }
+    .tree-search {
+      width: 100%; padding: 5px 10px; border: 1px solid #d9d9d9; border-radius: 4px;
+      font-size: 13px; outline: none; color: rgba(0,0,0,.85);
+    }
+    .tree-search:focus { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,.1); }
+    .tree-body { flex: 1; overflow-y: auto; padding: 6px 0; }
+
+    /* Class group */
+    .tree-class { }
+    .tree-class-hd {
+      display: flex; align-items: center; gap: 6px; padding: 7px 12px;
+      cursor: pointer; user-select: none; font-size: 13px; font-weight: 600;
+      color: rgba(0,0,0,.65); transition: background .15s;
+    }
+    .tree-class-hd:hover { background: #f5f5f5; }
+    .tree-class-hd .chevron { transition: transform .18s; flex-shrink: 0; }
+    .tree-class-hd.open .chevron { transform: rotate(90deg); }
+    .tree-class-hd .class-badge {
+      margin-left: auto; font-size: 11px; font-weight: 400;
+      color: rgba(0,0,0,.35); background: #f5f5f5; border-radius: 10px;
+      padding: 1px 7px; flex-shrink: 0;
+    }
+    .tree-components { display: none; }
+    .tree-components.open { display: block; }
+
+    /* Component item */
+    .tree-comp {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 12px 6px 28px; cursor: pointer; font-size: 13px;
+      color: rgba(0,0,0,.65); border-left: 2px solid transparent;
+      transition: all .15s; white-space: nowrap;
+    }
+    .tree-comp:hover { background: #f5f5f5; color: rgba(0,0,0,.85); }
+    .tree-comp.active { background: #e6f4ff; color: #1890ff; border-left-color: #1890ff; font-weight: 500; }
+    .tree-comp .comp-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: #d9d9d9; flex-shrink: 0;
+    }
+    .tree-comp .comp-count {
+      margin-left: auto; font-size: 11px; color: rgba(0,0,0,.35); flex-shrink: 0;
+    }
+
+    /* ── Right work-unit panel ── */
+    .wu-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #f5fafc; }
+    .wu-panel-header {
+      background: #fff; border-bottom: 1px solid #f0f0f0;
+      padding: 0; flex-shrink: 0;
+    }
+    /* Clickable title row */
+    .comp-title-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 24px; cursor: pointer; user-select: none;
+    }
+    .comp-title-row:hover { background: #fafafa; }
+    .wu-comp-title { font-size: 15px; font-weight: 600; color: rgba(0,0,0,.85); display: flex; align-items: center; gap: 8px; }
+    .wu-comp-title .comp-name { font-size: 13px; font-weight: 400; color: rgba(0,0,0,.45); }
+    .comp-toggle-chevron { transition: transform .2s; color: rgba(0,0,0,.35); flex-shrink: 0; }
+    .comp-title-row.open .comp-toggle-chevron { transform: rotate(180deg); }
+    /* Collapsible info body */
+    .comp-info-body { display: none; padding: 0 24px 16px; border-top: 1px solid #f5f5f5; }
+    .comp-info-body.show { display: block; }
+    .comp-meta { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .comp-meta-row { display: flex; gap: 0; font-size: 13px; line-height: 1.7; }
+    .comp-meta-label { flex-shrink: 0; width: 112px; font-weight: 600; color: rgba(0,0,0,.45); padding-top: 1px; }
+    .comp-meta-val { flex: 1; color: rgba(0,0,0,.75); }
+    /* Elements */
+    .comp-elements { margin-top: 12px; }
+    .comp-elements-title { font-size: 11px; font-weight: 600; color: rgba(0,0,0,.35); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+    .elem-list { display: flex; flex-direction: column; gap: 6px; }
+    .elem-item { display: flex; align-items: baseline; gap: 8px; font-size: 13px; line-height: 1.6; }
+    .elem-tag {
+      display: inline-flex; align-items: center; flex-shrink: 0;
+      font-size: 11px; font-weight: 600; font-family: 'SFMono-Regular', Consolas, monospace;
+      padding: 1px 7px; border-radius: 3px;
+    }
+    .elem-tag.c { background: #e6f4ff; color: #1890ff; border: 1px solid #91d5ff; }
+    .elem-tag.e { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+    .elem-text { color: rgba(0,0,0,.65); }
+    /* Wu toolbar row */
+    .wu-toolbar {
+      padding: 10px 24px 0; display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+    }
+    .wu-body { flex: 1; overflow-y: auto; padding: 12px 24px 24px; display: flex; flex-direction: column; gap: 10px; }
+
+    /* Work unit card */
+    .wu-card {
+      background: #fff; border: 1px solid #f0f0f0; border-radius: 6px;
+      overflow: hidden; transition: box-shadow .15s;
+    }
+    .wu-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+    .wu-card-header {
+      display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+      cursor: pointer; user-select: none;
+    }
+    .wu-id {
+      font-size: 13px; font-weight: 600; color: rgba(0,0,0,.85);
+      font-family: 'SFMono-Regular', Consolas, monospace; flex-shrink: 0;
+    }
+    .wu-cem-preview {
+      flex: 1; font-size: 13px; color: rgba(0,0,0,.45);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .wu-toggle-btn {
+      background: none; border: none; cursor: pointer; padding: 4px;
+      color: rgba(0,0,0,.35); border-radius: 4px; transition: all .15s; flex-shrink: 0;
+    }
+    .wu-toggle-btn:hover { background: #f5f5f5; color: rgba(0,0,0,.65); }
+    .wu-toggle-btn .chevron { transition: transform .18s; display: block; }
+    .wu-card.expanded .wu-toggle-btn .chevron { transform: rotate(180deg); }
+    .wu-elem-tags { display: flex; gap: 4px; flex-shrink: 0; }
+
+    .wu-card-body { display: none; padding: 0 14px 14px; border-top: 1px solid #f5f5f5; }
+    .wu-card.expanded .wu-card-body { display: block; }
+
+    .wu-cem-block {
+      margin-top: 10px; background: #fafafa; border: 1px solid #f0f0f0;
+      border-radius: 4px; padding: 8px 12px; position: relative;
+    }
+    .wu-cem-label-row {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;
+    }
+    .wu-cem-label { font-size: 11px; font-weight: 600; color: rgba(0,0,0,.35);
+      text-transform: uppercase; letter-spacing: .5px; }
+    .wu-cem-copy {
+      display: flex; align-items: center; gap: 4px; font-size: 12px; color: rgba(0,0,0,.35);
+      cursor: pointer; background: none; border: none; padding: 2px 6px; border-radius: 3px;
+      transition: all .15s;
+    }
+    .wu-cem-copy:hover { background: #efefef; color: rgba(0,0,0,.65); }
+    .wu-cem-text { font-size: 13px; color: rgba(0,0,0,.65); line-height: 1.7; }
+
+    .wu-prompt-block { margin-top: 10px; }
+    .wu-prompt-label-row {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;
+    }
+    .wu-prompt-label { font-size: 12px; font-weight: 600; color: rgba(0,0,0,.65); }
+    .wu-prompt-hint { font-size: 12px; color: rgba(0,0,0,.35); }
+    .wu-prompt-textarea {
+      width: 100%; min-height: 68px; padding: 7px 10px;
+      border: 1px solid #d9d9d9; border-radius: 4px; font-size: 13px;
+      color: rgba(0,0,0,.75); line-height: 1.65; resize: vertical; outline: none;
+      font-family: inherit; transition: border-color .15s;
+    }
+    .wu-prompt-textarea:focus { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,.1); }
+    .wu-prompt-textarea::placeholder { color: rgba(0,0,0,.3); }
+    .wu-card-footer {
+      display: flex; align-items: center; justify-content: flex-end; margin-top: 8px;
+    }
+    .wu-save-btn {
+      padding: 5px 14px; font-size: 13px; border-radius: 4px; cursor: pointer;
+      border: 1px solid #1890ff; background: #1890ff; color: #fff; transition: all .15s;
+    }
+    .wu-save-btn:hover { background: #40a9ff; border-color: #40a9ff; }
+    .wu-save-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* empty state */
+    .wu-empty {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; color: rgba(0,0,0,.25); gap: 12px;
+    }
+    .wu-empty svg { width: 48px; height: 48px; }
+    .wu-empty p { font-size: 14px; }
+
+    /* Import dropdown */
+    .import-wrap { position: relative; }
+    .import-dropdown {
+      display: none; position: absolute; top: calc(100% + 4px); left: 0;
+      background: #fff; border: 1px solid #e8e8e8; border-radius: 6px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.1); min-width: 200px; z-index: 200; padding: 4px 0;
+    }
+    .import-dropdown.open { display: block; }
+    .import-dropdown-item {
+      padding: 8px 14px; font-size: 13px; color: rgba(0,0,0,.75);
+      cursor: pointer; transition: background .12s;
+    }
+    .import-dropdown-item:hover { background: #f5f5f5; color: rgba(0,0,0,.85); }
+    .import-dropdown-divider { height: 1px; background: #f0f0f0; margin: 4px 0; }
+
+    /* Import confirm modal */
+    .modal-mask { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-mask.open { display: flex; }
+    .modal-box { background: #fff; border-radius: 8px; box-shadow: 0 6px 32px rgba(0,0,0,.15); width: 420px; }
+    .modal-header { display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-bottom: 1px solid #f0f0f0; }
+    .modal-header-icon { color: #faad14; flex-shrink: 0; }
+    .modal-title { font-size: 15px; font-weight: 600; }
+    .modal-body { padding: 14px 20px 20px; font-size: 13px; color: rgba(0,0,0,.65); line-height: 1.7; }
+    .modal-body strong { color: rgba(0,0,0,.85); }
+    .modal-footer { padding: 12px 20px; border-top: 1px solid #f0f0f0; display: flex; justify-content: flex-end; gap: 8px; }
+
+    /* Buttons */
+    .btn { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px;
+      border-radius: 4px; font-size: 13px; cursor: pointer; border: 1px solid #d9d9d9;
+      background: #fff; color: rgba(0,0,0,.65); transition: all .15s; white-space: nowrap; }
+    .btn:hover { border-color: #1890ff; color: #1890ff; }
+    .btn.primary { background: #1890ff; border-color: #1890ff; color: #fff; }
+    .btn.primary:hover { background: #40a9ff; border-color: #40a9ff; }
+
+    /* Toast */
+    .toast-wrap { position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
+      z-index: 9999; display: flex; flex-direction: column; align-items: center;
+      gap: 8px; pointer-events: none; }
+    .toast { background: rgba(0,0,0,.75); color: #fff; padding: 7px 16px;
+      border-radius: 6px; font-size: 13px; display: flex; align-items: center;
+      gap: 6px; opacity: 1; transition: opacity .3s; }
+    .toast.fade { opacity: 0; }
+    .toast.success { background: #52c41a; }
+  </style>
+</head>
+<body>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <a class="sidebar-back" href="../frontend-outside-eng/projects-eng.html">
+    <svg viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Back to Projects
+  </a>
+  <nav class="sidebar-menu">
+    <a class="menu-item" href="project-overview-eng.html">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M5 6h6M5 9h4"/></svg>
+      Overview
+    </a>
+    <a class="menu-item" href="doc-list-eng.html">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2h8a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M5 6h6M5 9h6M5 12h3"/></svg>
+      Document Review
+    </a>
+    <a class="menu-item" href="archives-eng.html">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 5h12v8H2z"/><path d="M2 5l2-3h5l2 3"/></svg>
+      Archive
+    </a>
+    <a class="menu-item" href="review-report-eng.html">
+      <svg viewBox="0 0 16 16" fill="none"><path d="M4 2h8a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3"/><path d="M6 6h4M6 9h4M6 12h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      Review Reports
+    </a>
+    <a class="menu-item active" href="review-config-eng.html">
+      <svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="13" cy="11" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M13 9.5V11l.8.8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      Review Config
+    </a>
+  </nav>
+</aside>
+
+<!-- Top bar -->
+<div class="main">
+  <header class="top-bar">
+    <div class="project-title">
+      <span class="project-name">Demo Project</span>
+      <span class="ant-tag">Common Criteria</span>
+      <span class="ant-tag">EAL4</span>
+    </div>
+    <div class="top-bar-right">
+      <div class="bell-wrap">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 16.5a1.5 1.5 0 003 0H6a1.5 1.5 0 003 0zm6-4.5H3l1.5-1.5V7.5C4.5 5.01 6.51 3 9 3s4.5 2.01 4.5 4.5V10.5L15 12z" fill="rgba(0,0,0,0.65)"/></svg>
+        <div class="bell-badge">3</div>
+      </div>
+      <div class="user-avatar">P</div>
+    </div>
+  </header>
+
+  <!-- Page content -->
+  <div class="page-content">
+
+    <!-- Left: component tree -->
+    <div class="tree-panel">
+      <div class="tree-panel-header">
+        <h3>Assurance Components</h3>
+        <input class="tree-search" id="treeSearch" type="text" placeholder="Search components…" oninput="filterTree(this.value)">
+      </div>
+      <div class="tree-body" id="treeBody"></div>
+    </div>
+
+    <!-- Right: work unit list -->
+    <div class="wu-panel" id="wuPanel">
+      <div class="wu-empty" id="wuEmpty">
+        <svg viewBox="0 0 48 48" fill="none"><rect x="8" y="6" width="32" height="36" rx="3" stroke="rgba(0,0,0,.15)" stroke-width="2"/><path d="M16 16h16M16 22h16M16 28h10" stroke="rgba(0,0,0,.15)" stroke-width="2" stroke-linecap="round"/></svg>
+        <p>Select a component from the left panel</p>
+      </div>
+      <div id="wuContent" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
+        <div class="wu-panel-header">
+          <div class="comp-title-row" id="compTitleRow" onclick="toggleCompInfo()">
+            <div class="wu-comp-title">
+              <span id="wuCompTitleId" style="font-family:monospace">—</span>
+              <span class="comp-name" id="wuCompTitleName"></span>
+            </div>
+            <svg class="comp-toggle-chevron" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 5L7 9.5L11.5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="comp-info-body" id="compInfoBody">
+            <div class="comp-meta" id="compMeta"></div>
+            <div class="comp-elements" id="compElements"></div>
+          </div>
+        </div>
+        <div class="wu-toolbar">
+          <button class="btn" onclick="expandAll()">Expand All</button>
+          <button class="btn" onclick="collapseAll()">Collapse All</button>
+          <div class="import-wrap" style="margin-left:auto">
+            <button class="btn" onclick="toggleImportDropdown(event)">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 2v7M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Import Prompts
+            </button>
+            <div class="import-dropdown" id="importDropdown"></div>
+          </div>
+        </div>
+        <div class="wu-body" id="wuBody"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Import confirm modal -->
+<div class="modal-mask" id="importModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <svg class="modal-header-icon" width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2a7 7 0 100 14A7 7 0 009 2zm0 4v4m0 2.5v.5" stroke="#faad14" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <span class="modal-title">Confirm Import</span>
+    </div>
+    <div class="modal-body">
+      All review prompts for this project will be replaced with the configuration from <strong id="importModalTplName"></strong>. This action cannot be undone.
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeImportModal()">Cancel</button>
+      <button class="btn primary" onclick="confirmImport()">Confirm Import</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Mock data ──────────────────────────────────────────────────────────────
+
+const CC_COMPONENTS = [
+  {
+    classId: 'ASE', className: 'ASE — Security Target Evaluation',
+    components: [
+      {
+        id: 'ASE_INT.1', name: 'ST Introduction', level: 1,
+        desc: 'Verify that the ST introduction contains an ST reference, TOE reference, TOE overview and TOE description.',
+        objectives: `The objective of this sub-activity is to determine whether the ST introduction provides a concise and general description of the TOE, identifies the ST and the TOE, and provides a general description of the TOE's intended usage and security features.`,
+        input: 'The ST.',
+        appNotes: 'The ST reference should uniquely identify the ST. The TOE reference should clearly identify the product version.',
+        elements: [
+          { id: 'ASE_INT.1.1C', text: 'The ST introduction shall contain an ST reference, a TOE reference, a TOE overview and a TOE description.' },
+          { id: 'ASE_INT.1.2C', text: 'The ST reference shall uniquely identify the ST.' },
+          { id: 'ASE_INT.1.3C', text: 'The TOE reference shall uniquely identify the TOE.' },
+          { id: 'ASE_INT.1.4C', text: 'The TOE overview shall summarize the usage and major security features of the TOE.' },
+          { id: 'ASE_INT.1.5C', text: 'The TOE overview shall identify the TOE type.' },
+          { id: 'ASE_INT.1.6C', text: 'The TOE overview shall identify any non-TOE hardware/software/firmware required by the TOE.' },
+          { id: 'ASE_INT.1.7C', text: 'For a multi-assurance ST, the TOE overview shall describe the TSF organization in terms of the sub-TSFs defined in the PP-Configuration the ST claims conformance to.' },
+          { id: 'ASE_INT.1.8C', text: 'The TOE description shall describe the physical scope of the TOE.' },
+          { id: 'ASE_INT.1.9C', text: 'The TOE description shall describe the logical scope of the TOE.' },
+          { id: 'ASE_INT.1.1E', text: 'The evaluator shall confirm that the information provided meets all requirements for content and presentation of evidence.' },
+          { id: 'ASE_INT.1.2E', text: 'The evaluator shall confirm that the TOE reference, the TOE overview, and the TOE description are consistent with each other.' },
+        ],
+        workUnits: [
+          { id: 'ASE_INT.1-1', elemE: 'ASE_INT.1.1E', elemC: ['ASE_INT.1.1C'], cem: 'The evaluator shall check that the ST introduction contains an ST reference, a TOE reference, a TOE overview and a TOE description.' },
+          { id: 'ASE_INT.1-2', elemE: 'ASE_INT.1.1E', elemC: ['ASE_INT.1.2C'], cem: 'The evaluator shall check that the ST reference uniquely identifies the ST.' },
+          { id: 'ASE_INT.1-3', elemE: 'ASE_INT.1.1E', elemC: ['ASE_INT.1.3C'], cem: 'The evaluator shall check that the TOE reference identifies the TOE.' },
+        ]
+      },
+      {
+        id: 'ASE_OBJ.2', name: 'Security Objectives', level: 2,
+        desc: 'Verify that TOE and operational environment security objectives are clearly defined with complete traceability to threats, policies and assumptions.',
+        objectives: 'The objective of this sub-activity is to determine whether the security objectives are clearly defined and are suitable to counter the identified threats and uphold the OSPs, and that the security objectives for the operational environment are sufficient to address all assumptions.',
+        input: 'The ST.',
+        appNotes: null,
+        elements: [
+          { id: 'ASE_OBJ.2.1C', text: 'The security objectives for the TOE and the operational environment shall be identified and defined.' },
+          { id: 'ASE_OBJ.2.2C', text: 'The security objectives for the TOE shall be traceable to threats countered by the TOE and OSPs enforced by the TOE.' },
+          { id: 'ASE_OBJ.2.3C', text: 'The security objectives for the operational environment shall be traceable to threats not countered by the TOE, OSPs not enforced by the TOE, and assumptions.' },
+          { id: 'ASE_OBJ.2.4C', text: 'The security objectives rationale shall demonstrate that the security objectives are suitable to counter each threat.' },
+          { id: 'ASE_OBJ.2.1E', text: 'The evaluator shall confirm that the information provided meets all requirements for content and presentation of evidence.' },
+          { id: 'ASE_OBJ.2.2E', text: 'The evaluator shall confirm that the security objectives rationale addresses all security problem definition statements.' },
+        ],
+        workUnits: [
+          { id: 'ASE_OBJ.2-1', elemE: 'ASE_OBJ.2.1E', elemC: ['ASE_OBJ.2.1C'], cem: 'The evaluator shall check that the statement of security objectives identifies and defines the security objectives for the TOE and the operational environment.' },
+          { id: 'ASE_OBJ.2-2', elemE: 'ASE_OBJ.2.2E', elemC: ['ASE_OBJ.2.2C', 'ASE_OBJ.2.3C'], cem: 'The evaluator shall check that the statement of security objectives traces each security objective to threats, OSPs and assumptions that it upsets or enforces.' },
+          { id: 'ASE_OBJ.2-3', elemE: 'ASE_OBJ.2.2E', elemC: ['ASE_OBJ.2.4C'], cem: 'The evaluator shall confirm that no security objective for the TOE and for the operational environment is unrelated to the security problem definition.' },
+        ]
+      },
+      {
+        id: 'ASE_SPD.1', name: 'Security Problem Definition', level: 1,
+        desc: 'Verify that the security problem definition identifies and defines all threats, OSPs and assumptions.',
+        objectives: 'The objective of this sub-activity is to determine whether the threats, OSPs, and assumptions that the TOE and its operational environment are to address have been completely and correctly identified.',
+        input: 'The ST.',
+        appNotes: 'If there are no threats or OSPs then that sub-component is not required. However, assumptions are always required.',
+        elements: [
+          { id: 'ASE_SPD.1.1C', text: 'The security problem definition shall describe each threat.' },
+          { id: 'ASE_SPD.1.2C', text: 'The security problem definition shall describe each OSP.' },
+          { id: 'ASE_SPD.1.3C', text: 'The security problem definition shall describe each assumption about the operational environment of the TOE.' },
+          { id: 'ASE_SPD.1.1E', text: 'The evaluator shall confirm that the information provided meets all requirements for content and presentation of evidence.' },
+        ],
+        workUnits: [
+          { id: 'ASE_SPD.1-1', elemE: 'ASE_SPD.1.1E', elemC: ['ASE_SPD.1.1C', 'ASE_SPD.1.2C'], cem: 'The evaluator shall check that the statement of the security problem definition identifies the threats to security and the OSPs that are to be addressed by the TOE and its operational environment.' },
+          { id: 'ASE_SPD.1-2', elemE: 'ASE_SPD.1.1E', elemC: ['ASE_SPD.1.3C'], cem: 'The evaluator shall check that the statement of the security problem definition identifies the assumptions about the operational environment.' },
+        ]
+      },
+      {
+        id: 'ASE_REQ.2', name: 'Security Requirements', level: 2,
+        desc: 'Verify that SFR and SAR derivations are justified and extended components are properly defined per CC rules.',
+        objectives: 'The objective of this sub-activity is to determine whether the SFRs and SARs have been stated completely and correctly, and whether the rationale clearly links the requirements to the security objectives.',
+        input: 'The ST.',
+        appNotes: 'Extended components must be based on CC Part 2 or Part 3 components where those components do not quite meet the developer\u2019s needs. Each extended component must be specified with equivalent rigour as CC components.',
+        elements: [
+          { id: 'ASE_REQ.2.1C', text: 'The statement of security requirements shall identify all SFRs and all SARs.' },
+          { id: 'ASE_REQ.2.2C', text: 'All SFRs and SARs shall be identified with a unique component name and reference the CC component from which they are drawn.' },
+          { id: 'ASE_REQ.2.3C', text: 'The security requirements rationale shall trace each SFR back to the security objectives for the TOE.' },
+          { id: 'ASE_REQ.2.4C', text: 'The security requirements rationale shall demonstrate that the SFRs meet all security objectives for the TOE.' },
+          { id: 'ASE_REQ.2.1E', text: 'The evaluator shall confirm that the information provided meets all requirements for content and presentation of evidence.' },
+          { id: 'ASE_REQ.2.2E', text: 'The evaluator shall confirm that the security requirements rationale addresses all SFR dependencies.' },
+        ],
+        workUnits: [
+          { id: 'ASE_REQ.2-1', elemE: 'ASE_REQ.2.1E', elemC: ['ASE_REQ.2.1C', 'ASE_REQ.2.2C'], cem: 'The evaluator shall check that the statement of security requirements identifies the SFRs and the SARs.' },
+          { id: 'ASE_REQ.2-2', elemE: 'ASE_REQ.2.2E', elemC: ['ASE_REQ.2.3C'], cem: 'The evaluator shall check that each dependency of the SFRs is satisfied.' },
+          { id: 'ASE_REQ.2-3', elemE: 'ASE_REQ.2.2E', elemC: ['ASE_REQ.2.4C'], cem: 'The evaluator shall confirm that all identified dependencies for the SFRs are satisfied in the ST.' },
+        ]
+      },
+    ]
+  },
+  {
+    classId: 'ADV', className: 'ADV — Development',
+    components: [
+      {
+        id: 'ADV_ARC.1', name: 'Security Architecture', level: 1,
+        desc: 'Verify that the security architecture covers TSF domain maintenance, initialization security, tamper protection and domain separation.',
+        objectives: 'The objective of this sub-activity is to determine whether the TSF is designed and structured such that security flaws are minimised and that maintenance can be more readily performed without the introduction of flaws.',
+        input: 'The ST; the TOE design description (ADV_TDS); the implementation representation (ADV_IMP) if being followed; the security architecture description.',
+        appNotes: 'The security architecture description covers the initialisation of the TOE, the self-protection of the TSF, and the separation of the TSF from non-TSF parts. The evaluator checks that the non-TSF parts cannot interfere with the TSF execution.',
+        elements: [
+          { id: 'ADV_ARC.1.1D', text: 'The developer shall design and implement the TOE so that the security features of the TSF cannot be bypassed.' },
+          { id: 'ADV_ARC.1.2D', text: 'The developer shall design and implement the TSF so that it is able to protect itself from tampering by untrusted active entities.' },
+          { id: 'ADV_ARC.1.1C', text: 'The security architecture description shall describe the security domains maintained by the TSF consistently with the SFRs.' },
+          { id: 'ADV_ARC.1.2C', text: 'The security architecture description shall describe how the TSF initialisation process is secure.' },
+          { id: 'ADV_ARC.1.3C', text: 'The security architecture description shall demonstrate that the TSF protects itself from tampering by untrusted subjects.' },
+          { id: 'ADV_ARC.1.4C', text: 'The security architecture description shall demonstrate that the TSF is able to protect itself from interference and logical tampering by untrusted subjects.' },
+          { id: 'ADV_ARC.1.1E', text: 'The evaluator shall confirm that the information provided meets all requirements for content and presentation of evidence.' },
+          { id: 'ADV_ARC.1.2E', text: 'The evaluator shall examine the security architecture description to determine that the TSF is structured to ensure that security-enforcement functions are protected from tampering.' },
+        ],
+        workUnits: [
+          { id: 'ADV_ARC.1-1', elemE: 'ADV_ARC.1.2E', elemC: ['ADV_ARC.1.1C'], cem: 'The evaluator shall examine the security architecture description to determine that it describes the security domains maintained by the TSF.' },
+          { id: 'ADV_ARC.1-2', elemE: 'ADV_ARC.1.2E', elemC: ['ADV_ARC.1.2C'], cem: 'The evaluator shall examine the security architecture description to determine that it describes how the TSF initialisation process is secure.' },
+          { id: 'ADV_ARC.1-3', elemE: 'ADV_ARC.1.2E', elemC: ['ADV_ARC.1.3C'], cem: 'The evaluator shall examine the security architecture description to determine that it describes how the TSF protects itself from tampering by untrusted subjects.' },
+          { id: 'ADV_ARC.1-4', elemE: 'ADV_ARC.1.2E', elemC: ['ADV_ARC.1.4C'], cem: 'The evaluator shall examine the security architecture description to determine that it describes how the TSF is able to protect itself from interference and logical tampering.' },
+        ]
+      },
+      {
+        id: 'ADV_FSP.5', name: 'Complete Semi-formal Functional Spec', level: 5,
+        desc: 'Verify that the functional specification completely describes all TSFIs in semi-formal style.',
+        objectives: 'The objective of this sub-activity is to determine whether the functional specification completely and accurately describes the TSF and its external interfaces.',
+        input: 'The ST; the functional specification; the TOE design description.',
+        appNotes: 'A TSFI is a means by which external entities interact with the TSF. The functional specification must describe the behaviour of the TSF at each TSFI in terms of effects, exceptions, and error messages.',
+        elements: [
+          { id: 'ADV_FSP.5.1D', text: 'The developer shall provide a functional specification.' },
+          { id: 'ADV_FSP.5.1C', text: 'The functional specification shall completely represent the TSF.' },
+          { id: 'ADV_FSP.5.2C', text: 'The functional specification shall describe the purpose and method of use for all TSFIs.' },
+          { id: 'ADV_FSP.5.3C', text: 'The functional specification shall identify and describe all parameters associated with each TSFI.' },
+          { id: 'ADV_FSP.5.4C', text: 'The functional specification shall describe all errors that may result from an invocation of each TSFI.' },
+          { id: 'ADV_FSP.5.1E', text: 'The evaluator shall confirm that the information provided meets all requirements for content and presentation of evidence.' },
+          { id: 'ADV_FSP.5.2E', text: 'The evaluator shall determine that the functional specification is an accurate and complete instantiation of the SFRs.' },
+        ],
+        workUnits: []
+      },
+      {
+        id: 'ADV_TDS.4', name: 'Semi-formal Modular Design', level: 4,
+        desc: 'Verify that the design description is presented per module covering security functions, interfaces and implementation details.',
+        objectives: 'The objective of this sub-activity is to determine whether the TOE design correctly and completely describes the TOE in terms of subsystems and modules, and adequately describes each module\u2019s contribution to the security functionality.',
+        input: 'The ST; the functional specification; the TOE design description; the implementation representation.',
+        appNotes: null,
+        elements: [
+          { id: 'ADV_TDS.4.1D', text: 'The developer shall provide the design of the TOE.' },
+          { id: 'ADV_TDS.4.1C', text: 'The design shall describe the structure of the TOE in terms of subsystems.' },
+          { id: 'ADV_TDS.4.2C', text: 'The design shall describe the security functionality provided by each subsystem of the TOE.' },
+          { id: 'ADV_TDS.4.3C', text: 'The design shall identify all interfaces to the subsystems of the TOE and describe the purpose and method of use of each interface.' },
+          { id: 'ADV_TDS.4.4C', text: 'The design shall describe the internals of all security-relevant modules in terms of algorithms and data structures.' },
+          { id: 'ADV_TDS.4.1E', text: 'The evaluator shall confirm that the information provided meets all requirements for content and presentation of evidence.' },
+          { id: 'ADV_TDS.4.2E', text: 'The evaluator shall determine that the design is an accurate and complete instantiation of the SFRs.' },
+        ],
+        workUnits: []
+      },
+    ]
+  },
+  {
+    classId: 'AGD', className: 'AGD — Guidance Documents',
+    components: []
+  },
+  {
+    classId: 'ALC', className: 'ALC — Life Cycle Support',
+    components: []
+  },
+  {
+    classId: 'ATE', className: 'ATE — Tests',
+    components: []
+  },
+  {
+    classId: 'AVA', className: 'AVA — Vulnerability Assessment',
+    components: []
+  },
+];
+
+// Persistent prompt storage (in-memory for prototype)
+const promptStore = {}; // key: wu.id, value: string (defaults to wu.cem if not set)
+
+// Mock templates from review-config (in real app, fetched from backend)
+const TEMPLATES = [
+  { id: 't1', name: 'Standard CEM Template', prompts: {} },
+  { id: 't2', name: 'TEE Specialized Template', prompts: {
+    'ASE_INT.1-2': 'Check that the ST reference identifier includes a version number to ensure uniqueness across multiple versions.',
+    'ASE_OBJ.2-1': 'Check that each security objective is given a quantifiable definition, not merely a name.',
+    'ADV_ARC.1-3': 'Check that the security architecture description clearly explains TSF tamper-protection mechanisms, including memory isolation and integrity verification.',
+  }},
+];
+
+let activeCompId = null;
+
+// ── Render tree ────────────────────────────────────────────────────────────
+function renderTree(filter = '') {
+  const f = filter.toLowerCase();
+  const el = document.getElementById('treeBody');
+  el.innerHTML = CC_COMPONENTS.map(cls => {
+    const matchComps = cls.components.filter(c =>
+      !f || c.id.toLowerCase().includes(f) || c.name.toLowerCase().includes(f)
+    );
+    if (!matchComps.length) return '';
+    const isOpen = !f ? cls.classId === 'ASE' : true;
+    return `
+      <div class="tree-class" id="cls-${cls.classId}">
+        <div class="tree-class-hd ${isOpen?'open':''}" onclick="toggleClass('${cls.classId}')">
+          <svg class="chevron" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          ${cls.classId}
+        </div>
+        <div class="tree-components ${isOpen?'open':''}" id="comps-${cls.classId}">
+          ${matchComps.map(comp => `
+            <div class="tree-comp ${comp.id===activeCompId?'active':''}"
+              id="tree-${comp.id}" onclick="selectComp('${comp.id}')">
+              <span class="comp-dot"></span>
+              ${comp.id}
+              <span class="comp-count">${comp.workUnits.length}</span>
+            </div>`).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleClass(classId) {
+  const hd = document.querySelector(`#cls-${classId} .tree-class-hd`);
+  const comps = document.getElementById(`comps-${classId}`);
+  hd.classList.toggle('open');
+  comps.classList.toggle('open');
+}
+
+function filterTree(val) { renderTree(val); }
+
+// ── Select component ───────────────────────────────────────────────────────
+function selectComp(compId) {
+  activeCompId = compId;
+  renderTree(document.getElementById('treeSearch').value);
+
+  const comp = CC_COMPONENTS.flatMap(c => c.components).find(c => c.id === compId);
+  if (!comp) return;
+
+  document.getElementById('wuEmpty').style.display = 'none';
+  const wuContent = document.getElementById('wuContent');
+  wuContent.style.display = 'flex';
+
+  document.getElementById('wuCompTitleId').textContent = comp.id;
+  document.getElementById('wuCompTitleName').textContent = comp.name;
+  // Collapse info by default
+  document.getElementById('compTitleRow').classList.remove('open');
+  document.getElementById('compInfoBody').classList.remove('show');
+
+  const metaRows = [
+    { label: 'Objectives', val: comp.objectives },
+    { label: 'Input', val: comp.input },
+    comp.appNotes ? { label: 'Application notes', val: comp.appNotes } : null,
+  ].filter(Boolean);
+  document.getElementById('compMeta').innerHTML = metaRows.map(r => `
+    <div class="comp-meta-row">
+      <span class="comp-meta-label">${r.label}</span>
+      <span class="comp-meta-val">${r.val}</span>
+    </div>
+  `).join('');
+
+  const elems = comp.elements || [];
+  document.getElementById('compElements').innerHTML = elems.length ? `
+    <div class="comp-elements-title" style="margin-top:14px">Assurance Elements</div>
+    <div class="elem-list">
+      ${elems.map(e => {
+        const type = e.id.endsWith('E') ? 'e' : (e.id.endsWith('D') ? 'e' : 'c');
+        return `<div class="elem-item">
+          <span class="elem-tag ${type}">${e.id}</span>
+          <span class="elem-text">${e.text}</span>
+        </div>`;
+      }).join('')}
+    </div>
+  ` : '';
+
+  renderWuCards(comp);
+}
+
+function toggleCompInfo() {
+  document.getElementById('compTitleRow').classList.toggle('open');
+  document.getElementById('compInfoBody').classList.toggle('show');
+}
+
+function renderWuCards(comp) {
+  const body = document.getElementById('wuBody');
+  body.innerHTML = comp.workUnits.map(wu => {
+    const saved = promptStore[wu.id] !== undefined ? promptStore[wu.id] : wu.cem;
+    return `
+      <div class="wu-card expanded" id="wucard-${wu.id}">
+        <div class="wu-card-header" onclick="toggleWuCard('${wu.id}')">
+          <span class="wu-id">${wu.id}</span>
+          <span class="wu-elem-tags">
+            ${wu.elemE ? `<span class="elem-tag e">${wu.elemE}</span>` : ''}
+            ${(wu.elemC || []).map(c => `<span class="elem-tag c">${c}</span>`).join('')}
+          </span>
+          <button class="wu-toggle-btn" tabindex="-1">
+            <svg class="chevron" width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 4.5L6.5 8.5L10.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="wu-card-body">
+          <div class="wu-cem-block">
+            <div class="wu-cem-label-row">
+              <span class="wu-cem-label">CEM Work Unit</span>
+              <button class="wu-cem-copy" onclick="copyCem('${wu.id}', this)">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="4" y="4" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M3 8H2a1 1 0 01-1-1V2a1 1 0 011-1h5a1 1 0 011 1v1" stroke="currentColor" stroke-width="1.2"/></svg>
+                Copy
+              </button>
+            </div>
+            <div class="wu-cem-text" id="cem-${wu.id}">${wu.cem}</div>
+          </div>
+          <div class="wu-prompt-block">
+            <div class="wu-prompt-label-row">
+              <span class="wu-prompt-label">Review Prompt</span>
+            </div>
+            <textarea class="wu-prompt-textarea" id="prompt-${wu.id}"
+              placeholder="Leave blank to use the CEM text above as the prompt…">${saved}</textarea>
+            <div class="wu-card-footer">
+              <button class="wu-save-btn" onclick="savePrompt('${wu.id}')">Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleWuCard(wuId) {
+  document.getElementById(`wucard-${wuId}`).classList.toggle('expanded');
+}
+
+function savePrompt(wuId) {
+  promptStore[wuId] = document.getElementById(`prompt-${wuId}`).value;
+  renderTree(document.getElementById('treeSearch').value);
+  toast('Saved', 'success');
+}
+
+function copyCem(wuId, btn) {
+  const text = document.getElementById(`cem-${wuId}`).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#52c41a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Copied`;
+    btn.style.color = '#52c41a';
+    setTimeout(() => { btn.innerHTML = orig; btn.style.color = ''; }, 1500);
+  });
+}
+
+function expandAll() {
+  document.querySelectorAll('.wu-card').forEach(c => c.classList.add('expanded'));
+}
+function collapseAll() {
+  document.querySelectorAll('.wu-card').forEach(c => c.classList.remove('expanded'));
+}
+
+// ── Import prompts ─────────────────────────────────────────────────────────
+let pendingImportTplId = null;
+
+function toggleImportDropdown(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('importDropdown');
+  if (dd.classList.contains('open')) { dd.classList.remove('open'); return; }
+  dd.innerHTML = TEMPLATES.map(t =>
+    `<div class="import-dropdown-item" onclick="openImportModal('${t.id}')">${t.name}</div>`
+  ).join('');
+  dd.classList.add('open');
+}
+
+function openImportModal(tplId) {
+  document.getElementById('importDropdown').classList.remove('open');
+  const tpl = TEMPLATES.find(t => t.id === tplId);
+  if (!tpl) return;
+  pendingImportTplId = tplId;
+  document.getElementById('importModalTplName').textContent = tpl.name;
+  document.getElementById('importModal').classList.add('open');
+}
+
+function closeImportModal() {
+  document.getElementById('importModal').classList.remove('open');
+  pendingImportTplId = null;
+}
+
+function confirmImport() {
+  const tpl = TEMPLATES.find(t => t.id === pendingImportTplId);
+  if (!tpl) return;
+  closeImportModal();
+  const allWus = CC_COMPONENTS.flatMap(cls => cls.components).flatMap(c => c.workUnits);
+  allWus.forEach(wu => {
+    promptStore[wu.id] = tpl.prompts[wu.id] !== undefined ? tpl.prompts[wu.id] : wu.cem;
+  });
+  if (activeCompId) {
+    const comp = CC_COMPONENTS.flatMap(c => c.components).find(c => c.id === activeCompId);
+    if (comp) renderWuCards(comp);
+  }
+  toast(`Imported "${tpl.name}"`, 'success');
+}
+
+document.addEventListener('click', () => {
+  document.getElementById('importDropdown')?.classList.remove('open');
+});
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function toast(msg, type) {
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' ' + type : '');
+  if (type === 'success') {
+    el.innerHTML = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 7l3 3 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>${msg}`;
+  } else { el.textContent = msg; }
+  wrap.appendChild(el);
+  setTimeout(() => { el.classList.add('fade'); setTimeout(() => el.remove(), 300); }, 2000);
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+renderTree();
+// Auto-select first component
+selectComp('ASE_INT.1');
+</script>
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>项目不存在 - CertHub</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      font-size: 14px;
+      color: rgba(0,0,0,0.85);
+      background: #f5fafc;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top-bar {
+      height: 50px;
+      background: #fff;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      flex-shrink: 0;
+    }
+
+    .logo {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1890ff;
+      letter-spacing: 0.5px;
+    }
+
+    .user-agency {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: #1890ff;
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 24px;
+    }
+
+    .error-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 64px 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      max-width: 520px;
+      width: 100%;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    .error-illustration {
+      width: 120px;
+      height: 120px;
+      margin-bottom: 32px;
+      position: relative;
+    }
+
+    .error-code {
+      font-size: 56px;
+      font-weight: 700;
+      color: #f0f0f0;
+      line-height: 1;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      letter-spacing: -2px;
+      z-index: 0;
+      user-select: none;
+    }
+
+    .error-icon {
+      position: relative;
+      z-index: 1;
+    }
+
+    .error-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: rgba(0,0,0,0.85);
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+
+    .error-desc {
+      font-size: 14px;
+      color: rgba(0,0,0,0.45);
+      margin-bottom: 36px;
+      line-height: 1.8;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 36px;
+      padding: 0 20px;
+      background: #1890ff;
+      color: #fff;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+      text-decoration: none;
+    }
+    .btn-primary:hover { background: #40a9ff; }
+    .btn-primary svg { flex-shrink: 0; }
+
+    .error-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: rgba(0,0,0,0.25);
+      margin-top: 28px;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="top-bar">
+    <span class="logo">CertHub</span>
+    <div class="user-agency">张</div>
+  </header>
+
+  <main class="main">
+    <div class="error-card">
+
+      <!-- Illustration -->
+      <div class="error-illustration">
+        <span class="error-code">404</span>
+        <div class="error-icon">
+          <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Background circle -->
+            <circle cx="60" cy="60" r="54" fill="#f0f5ff" stroke="#adc6ff" stroke-width="1.5"/>
+            <!-- 文件夹外框 -->
+            <path d="M26 46 C26 43 28 41 31 41 L50 41 L54 36 L89 36 C92 36 94 38 94 41 L94 80 C94 83 92 85 89 85 L31 85 C28 85 26 83 26 80 Z" fill="#e6efff" stroke="#91b8ff" stroke-width="2"/>
+            <!-- 文件夹内阴影 -->
+            <path d="M26 48 L94 48" stroke="#91b8ff" stroke-width="1" opacity="0.5"/>
+            <!-- 问号 -->
+            <text x="60" y="73" text-anchor="middle" font-size="28" font-weight="700" fill="#4a90d9" opacity="0.5" font-family="-apple-system, sans-serif">?</text>
+          </svg>
+        </div>
+      </div>
+
+      <h1 class="error-title">该项目不存在或已删除</h1>
+      <p class="error-desc">您访问的项目可能已被删除或从未存在<br>请检查链接是否正确</p>
+
+      <a href="../cert/proList.html" class="btn-primary">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M8.5 3L5 7l3.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Back to Projects
+      </a>
+
+      <span class="error-badge">Error 404 · Not Found</span>
+    </div>
+  </main>
+
+</body>
+</html>

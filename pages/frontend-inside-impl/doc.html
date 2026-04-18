@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>文档编辑 - W-CaaS</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      font-size: 14px;
+      color: rgba(0,0,0,0.85);
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* === 顶部栏 === */
+    .top-bar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 50px;
+      background: #fff;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 100;
+    }
+
+    .top-bar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-back {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      cursor: pointer;
+      color: rgba(0,0,0,0.65);
+      border-radius: 4px;
+      transition: background 0.2s, color 0.2s;
+    }
+    .btn-back:hover { background: #f5f5f5; color: rgba(0,0,0,0.85); }
+    .btn-back svg { width: 16px; height: 16px; }
+
+    .doc-title {
+      font-size: 15px;
+      font-weight: 500;
+      color: rgba(0,0,0,0.85);
+    }
+
+    .btn-edit-title {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      color: rgba(0,0,0,0.35);
+      border-radius: 4px;
+      transition: color 0.2s;
+    }
+    .btn-edit-title:hover { color: #1890ff; }
+    .btn-edit-title svg { width: 14px; height: 14px; }
+
+    .top-bar-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .btn-menu {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      color: rgba(0,0,0,0.65);
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+    .btn-menu:hover { background: #f5f5f5; }
+    .btn-menu svg { width: 18px; height: 18px; }
+
+    .divider-v {
+      width: 1px;
+      height: 20px;
+      background: #e8e8e8;
+    }
+
+    .bell-wrap {
+      position: relative;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+    .bell-wrap:hover { background: #f5f5f5; }
+    .bell-wrap svg { width: 18px; height: 18px; color: rgba(0,0,0,0.65); }
+
+    .bell-badge {
+      position: absolute;
+      top: 2px; right: 2px;
+      background: #ff4d4f;
+      color: #fff;
+      font-size: 9px;
+      min-width: 16px; height: 16px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 3px; line-height: 1;
+      font-weight: 600;
+    }
+
+    .user-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: #1890ff;
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 500;
+      cursor: pointer;
+    }
+
+    /* === 主体布局 === */
+    .layout {
+      display: flex;
+      margin-top: 50px;
+      min-height: calc(100vh - 50px);
+    }
+
+    /* === 左侧面板 === */
+    .left-panel {
+      width: 240px;
+      flex-shrink: 0;
+      background: #fff;
+      border-right: 1px solid #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 50px;
+      bottom: 0;
+      left: 0;
+      transition: width 0.2s;
+      z-index: 50;
+    }
+    .left-panel.collapsed {
+      width: 48px;
+    }
+
+    .panel-controls {
+      display: flex;
+      align-items: center;
+      padding: 10px 12px;
+      border-bottom: 1px solid #f0f0f0;
+      gap: 8px;
+    }
+
+    .btn-collapse-panel {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      cursor: pointer;
+      color: rgba(0,0,0,0.45);
+      border-radius: 4px;
+      transition: background 0.2s, color 0.2s;
+      flex-shrink: 0;
+    }
+    .btn-collapse-panel:hover { background: #f5f5f5; color: rgba(0,0,0,0.85); }
+    .btn-collapse-panel svg { width: 14px; height: 14px; }
+
+    .view-toggles {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .left-panel.collapsed .view-toggles { display: none; }
+
+    .btn-view {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 4px;
+      cursor: pointer;
+      color: rgba(0,0,0,0.45);
+      transition: background 0.2s, color 0.2s;
+      border: 1px solid transparent;
+    }
+    .btn-view:hover { background: #f5f5f5; color: rgba(0,0,0,0.85); }
+    .btn-view.active {
+      background: #e6f7ff;
+      color: #1890ff;
+      border-color: #91d5ff;
+    }
+    .btn-view svg { width: 16px; height: 16px; }
+
+    .toc-section {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px;
+    }
+    .left-panel.collapsed .toc-section { display: none; }
+
+    .toc-label {
+      font-size: 13px;
+      color: rgba(0,0,0,0.45);
+      margin-bottom: 8px;
+    }
+
+    /* === 编辑器区域 === */
+    .editor-area {
+      flex: 1;
+      margin-left: 240px;
+      margin-right: 320px;
+      transition: margin-left 0.2s, margin-right 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 0 80px;
+    }
+    .editor-area.panel-collapsed { margin-left: 48px; }
+    .editor-area.comments-collapsed { margin-right: 48px; }
+
+    .editor-inner {
+      width: 100%;
+      max-width: 780px;
+      padding: 0 24px;
+    }
+
+    /* 文档内容样式 */
+    .doc-content {
+      font-size: 15px;
+      line-height: 1.8;
+      color: rgba(0,0,0,0.85);
+      outline: none;
+    }
+
+    .doc-content p {
+      margin-bottom: 8px;
+    }
+
+    .doc-content ol {
+      padding-left: 28px;
+      margin-bottom: 8px;
+      list-style: none;
+      counter-reset: ol-counter;
+    }
+
+    .doc-content ol > li {
+      counter-increment: ol-counter;
+      margin-bottom: 4px;
+      position: relative;
+    }
+
+    .doc-content ol > li::before {
+      content: counter(ol-counter) ".";
+      color: #1890ff;
+      font-size: 15px;
+      margin-right: 6px;
+    }
+
+    .doc-content ol > li > span {
+      color: #1890ff;
+      text-decoration: underline;
+    }
+
+    /* 嵌套子列表（字母序） */
+    .doc-content ol ol {
+      counter-reset: sub-counter;
+      padding-left: 24px;
+      margin-top: 4px;
+    }
+
+    .doc-content ol ol > li {
+      counter-increment: sub-counter;
+    }
+
+    .doc-content ol ol > li::before {
+      content: counter(sub-counter, lower-alpha) ".";
+      color: #1890ff;
+    }
+
+    .doc-content ol ol > li > span {
+      color: #1890ff;
+      text-decoration: underline;
+    }
+
+    /* 文档引用块 */
+    .doc-ref-block {
+      border: 1px solid #e8e8e8;
+      border-radius: 6px;
+      padding: 14px 16px;
+      margin: 12px 0;
+      background: #fafafa;
+      position: relative;
+      cursor: pointer;
+    }
+    .doc-ref-block:hover { border-color: #91d5ff; }
+    .doc-ref-block:hover .block-actions { display: flex; }
+
+    .doc-ref-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .doc-ref-icon {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(0,0,0,0.45);
+      flex-shrink: 0;
+    }
+    .doc-ref-icon svg { width: 16px; height: 16px; }
+
+    .doc-ref-name {
+      font-size: 13px;
+      color: rgba(0,0,0,0.65);
+    }
+
+    .doc-ref-content {
+      font-size: 14px;
+      color: rgba(0,0,0,0.85);
+      line-height: 1.7;
+    }
+    .doc-ref-content p { margin-bottom: 4px; }
+
+    .block-actions {
+      display: none;
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      align-items: center;
+      gap: 4px;
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 4px;
+      padding: 3px 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .block-action-btn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: rgba(0,0,0,0.65);
+      cursor: pointer;
+      padding: 3px 6px;
+      border-radius: 3px;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .block-action-btn:hover { background: #f5f5f5; color: rgba(0,0,0,0.85); }
+    .block-action-btn.danger:hover { background: #fff1f0; color: #ff4d4f; }
+    .block-action-btn svg { width: 12px; height: 12px; }
+
+    .block-action-sep {
+      width: 1px;
+      height: 14px;
+      background: #e8e8e8;
+    }
+
+    /* === 右侧批注面板 === */
+    .comments-panel {
+      width: 320px;
+      flex-shrink: 0;
+      background: #fff;
+      border-left: 1px solid #f0f0f0;
+      position: fixed;
+      top: 50px;
+      bottom: 0;
+      right: 0;
+      display: flex;
+      flex-direction: column;
+      transition: width 0.2s;
+      z-index: 50;
+    }
+    .comments-panel.collapsed {
+      width: 48px;
+    }
+
+    .comments-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid #f0f0f0;
+      flex-shrink: 0;
+    }
+
+    .comments-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(0,0,0,0.85);
+      white-space: nowrap;
+    }
+    .comments-panel.collapsed .comments-title { display: none; }
+
+    .btn-collapse-comments {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      color: rgba(0,0,0,0.45);
+      border-radius: 4px;
+      transition: background 0.2s, color 0.2s;
+      flex-shrink: 0;
+    }
+    .btn-collapse-comments:hover { background: #f5f5f5; color: rgba(0,0,0,0.85); }
+    .btn-collapse-comments svg { width: 14px; height: 14px; }
+
+    .comments-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    .comments-panel.collapsed .comments-list { display: none; }
+
+    /* 批注卡片 */
+    .comment-card {
+      border: 1px solid #f0f0f0;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .comment-highlight {
+      background: #fffbe6;
+      border-left: 3px solid #faad14;
+      padding: 6px 10px;
+      font-size: 13px;
+      color: rgba(0,0,0,0.65);
+      font-style: italic;
+    }
+
+    .comment-body {
+      padding: 10px 12px;
+    }
+
+    .comment-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .comment-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #1890ff;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .comment-author {
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(0,0,0,0.85);
+    }
+
+    .comment-date {
+      font-size: 12px;
+      color: rgba(0,0,0,0.35);
+      margin-left: auto;
+    }
+
+    .comment-text {
+      font-size: 13px;
+      color: rgba(0,0,0,0.75);
+      line-height: 1.6;
+    }
+
+    /* === AI 浮动按钮 === */
+    .ai-float-btn {
+      position: fixed;
+      bottom: 24px;
+      right: 340px;
+      width: 44px;
+      height: 44px;
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+      transition: box-shadow 0.2s, border-color 0.2s;
+      z-index: 200;
+      font-size: 14px;
+      font-weight: 600;
+      color: #1890ff;
+    }
+    .ai-float-btn:hover {
+      box-shadow: 0 4px 16px rgba(24,144,255,0.25);
+      border-color: #91d5ff;
+    }
+
+    /* === 下拉菜单 === */
+    .dropdown-mask {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+    }
+    .dropdown-mask.active { display: block; }
+
+    .dropdown-menu {
+      display: none;
+      position: fixed;
+      background: #fff;
+      border: 1px solid #f0f0f0;
+      border-radius: 6px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+      z-index: 1000;
+      min-width: 160px;
+      padding: 4px 0;
+    }
+    .dropdown-menu.active { display: block; }
+
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      font-size: 14px;
+      color: rgba(0,0,0,0.85);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .dropdown-item:hover { background: #f5f5f5; }
+    .dropdown-item.danger { color: #ff4d4f; }
+    .dropdown-item.danger:hover { background: #fff1f0; }
+    .dropdown-item svg { width: 14px; height: 14px; color: rgba(0,0,0,0.45); }
+    .dropdown-item.danger svg { color: #ff4d4f; }
+  </style>
+</head>
+<body>
+
+  <!-- 顶部栏 -->
+  <header class="top-bar">
+    <div class="top-bar-left">
+      <div class="btn-back" onclick="location.href='doc-list.html'" title="返回">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </div>
+      <span class="doc-title">有序/无序列表测试</span>
+      <div class="btn-edit-title" title="重命名">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+        </svg>
+      </div>
+    </div>
+    <div class="top-bar-right">
+      <div class="btn-menu" onclick="toggleDropdown('main-menu')" title="更多操作">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <rect x="3" y="5" width="18" height="2" rx="1"/>
+          <rect x="3" y="11" width="18" height="2" rx="1"/>
+          <rect x="3" y="17" width="18" height="2" rx="1"/>
+        </svg>
+      </div>
+      <div class="divider-v"></div>
+      <div class="bell-wrap" title="通知">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+        <span class="bell-badge">38</span>
+      </div>
+      <div class="user-avatar" title="章喆">章</div>
+    </div>
+  </header>
+
+  <!-- 下拉菜单遮罩 -->
+  <div class="dropdown-mask" id="dropdown-mask" onclick="closeDropdown()"></div>
+
+  <!-- 主菜单下拉 -->
+  <div class="dropdown-menu" id="main-menu" style="top:54px;right:20px;">
+    <div class="dropdown-item" onclick="closeDropdown()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+      导出 Word
+    </div>
+    <div class="dropdown-item" onclick="closeDropdown()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+      查看日志
+    </div>
+    <div class="dropdown-item" onclick="closeDropdown()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+      设置跟进成员
+    </div>
+  </div>
+
+  <!-- 主体布局 -->
+  <div class="layout">
+
+    <!-- 左侧面板 -->
+    <aside class="left-panel" id="leftPanel">
+      <div class="panel-controls">
+        <div class="btn-collapse-panel" onclick="toggleLeftPanel()" title="收起">
+          <svg id="leftPanelIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </div>
+        <div class="view-toggles">
+          <div class="btn-view active" id="viewSingle" onclick="setView('single')" title="单栏视图">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="4" rx="1"/>
+              <rect x="3" y="10" width="18" height="4" rx="1"/>
+              <rect x="3" y="17" width="18" height="4" rx="1"/>
+            </svg>
+          </div>
+          <div class="btn-view" id="viewSplit" onclick="setView('split')" title="双栏视图">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="8" height="18" rx="1"/>
+              <rect x="13" y="3" width="8" height="18" rx="1"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="toc-section">
+        <div class="toc-label">目录</div>
+      </div>
+    </aside>
+
+    <!-- 编辑器主区域 -->
+    <main class="editor-area" id="editorArea">
+      <div class="editor-inner">
+        <!-- 文档内容 -->
+        <div class="doc-content">
+          <p>说到发送大福阿的身份</p>
+          <ol>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li>
+              <ol>
+                <li><span>阿的说法</span></li>
+                <li><span>阿的说法</span></li>
+              </ol>
+            </li>
+            <li><span>阿道夫</span></li>
+          </ol>
+          <p>&nbsp;</p>
+
+          <!-- 文档引用块 -->
+          <div class="doc-ref-block" id="refBlock">
+            <div class="block-actions">
+              <div class="block-action-btn" onclick="alert('功能开发中')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+                分离
+              </div>
+              <div class="block-action-sep"></div>
+              <div class="block-action-btn" onclick="alert('编辑功能开发中')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                编辑
+              </div>
+              <div class="block-action-sep"></div>
+              <div class="block-action-btn" onclick="alert('正在刷新...')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                刷新
+              </div>
+              <div class="block-action-sep"></div>
+              <div class="block-action-btn danger" onclick="confirmDelete()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                删除
+              </div>
+            </div>
+            <div class="doc-ref-header">
+              <div class="doc-ref-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                  <line x1="9" y1="7" x2="15" y2="7"></line>
+                  <line x1="9" y1="11" x2="15" y2="11"></line>
+                  <line x1="9" y1="15" x2="13" y2="15"></line>
+                </svg>
+              </div>
+              <span class="doc-ref-name">[ST]TOE用途与重要安全特征(EAL2-EAL7)</span>
+            </div>
+            <div class="doc-ref-content">
+              <p>发到发到</p>
+              <p>本TOE实现的主要安全特性含：12321</p>
+            </div>
+          </div>
+
+          <p>&nbsp;</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- 右侧批注面板 -->
+    <aside class="comments-panel" id="commentsPanel">
+      <div class="comments-header">
+        <span class="comments-title">批注（1）</span>
+        <div class="btn-collapse-comments" onclick="toggleCommentsPanel()" title="收起">
+          <svg id="commentsPanelIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="comments-list">
+        <!-- 批注卡片 -->
+        <div class="comment-card">
+          <div class="comment-highlight">法</div>
+          <div class="comment-body">
+            <div class="comment-meta">
+              <div class="comment-avatar">崔</div>
+              <span class="comment-author">崔刚</span>
+              <span class="comment-date">2025年11月17日</span>
+            </div>
+            <div class="comment-text">阿斯顿发</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- AI 浮动按钮 -->
+  <div class="ai-float-btn" onclick="alert('AI 功能开发中')" title="AI 助手">
+    A↑
+  </div>
+
+  <script>
+    /* === 状态 === */
+    let leftPanelCollapsed = false;
+    let commentsPanelCollapsed = false;
+    let currentView = 'single';
+
+    /* === 左侧面板折叠 === */
+    function toggleLeftPanel() {
+      leftPanelCollapsed = !leftPanelCollapsed;
+      const panel = document.getElementById('leftPanel');
+      const editor = document.getElementById('editorArea');
+      const icon = document.getElementById('leftPanelIcon');
+
+      if (leftPanelCollapsed) {
+        panel.classList.add('collapsed');
+        editor.classList.add('panel-collapsed');
+        icon.innerHTML = '<polyline points="9 18 15 12 9 6"></polyline>';
+      } else {
+        panel.classList.remove('collapsed');
+        editor.classList.remove('panel-collapsed');
+        icon.innerHTML = '<polyline points="15 18 9 12 15 6"></polyline>';
+      }
+    }
+
+    /* === 右侧批注面板折叠 === */
+    function toggleCommentsPanel() {
+      commentsPanelCollapsed = !commentsPanelCollapsed;
+      const panel = document.getElementById('commentsPanel');
+      const editor = document.getElementById('editorArea');
+      const icon = document.getElementById('commentsPanelIcon');
+      const aiBtn = document.querySelector('.ai-float-btn');
+
+      if (commentsPanelCollapsed) {
+        panel.classList.add('collapsed');
+        editor.classList.add('comments-collapsed');
+        editor.style.marginRight = '48px';
+        aiBtn.style.right = '68px';
+        icon.innerHTML = '<polyline points="15 18 9 12 15 6"></polyline>';
+      } else {
+        panel.classList.remove('collapsed');
+        editor.classList.remove('comments-collapsed');
+        editor.style.marginRight = '320px';
+        aiBtn.style.right = '340px';
+        icon.innerHTML = '<polyline points="9 18 15 12 9 6"></polyline>';
+      }
+    }
+
+    /* === 视图切换 === */
+    function setView(view) {
+      currentView = view;
+      document.getElementById('viewSingle').classList.toggle('active', view === 'single');
+      document.getElementById('viewSplit').classList.toggle('active', view === 'split');
+    }
+
+    /* === 下拉菜单 === */
+    function toggleDropdown(id) {
+      const menu = document.getElementById(id);
+      const mask = document.getElementById('dropdown-mask');
+      const isActive = menu.classList.contains('active');
+      closeDropdown();
+      if (!isActive) {
+        menu.classList.add('active');
+        mask.classList.add('active');
+      }
+    }
+
+    function closeDropdown() {
+      document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('active'));
+      document.getElementById('dropdown-mask').classList.remove('active');
+    }
+
+    /* === 删除确认 === */
+    function confirmDelete() {
+      if (confirm('确认删除该引用块？')) {
+        document.getElementById('refBlock').remove();
+        closeDropdown();
+      }
+    }
+  </script>
+</body>
+</html>

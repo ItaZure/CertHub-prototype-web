@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Space - CertHub</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "PingFang SC","Microsoft YaHei",sans-serif; font-size: 14px; color: rgba(0,0,0,0.85); background: #f0f2f5; height: 100vh; overflow: hidden; display: flex; }
+
+    .sidebar { width: 200px; flex-shrink: 0; background: #fff; height: 100vh; display: flex; flex-direction: column; border-right: 1px solid #f0f0f0; }
+    .sidebar-logo { height: 50px; display: flex; align-items: center; padding: 0 24px; border-bottom: 1px solid #f0f0f0; }
+    .sidebar-logo img { height: 28px; }
+    .sidebar-menu { padding: 12px 0 0; flex: 1; overflow-y: auto; }
+    .menu-item { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px 0 24px; border-radius: 8px; margin: 0 5px 4px; cursor: pointer; color: rgba(0,0,0,0.65); font-size: 14px; transition: all 0.2s; white-space: nowrap; }
+    .menu-item:hover { background: #f5f5f5; color: rgba(0,0,0,0.85); }
+    .menu-item.active { background: #e6f7ff; color: #1890ff; }
+    .menu-item svg { flex-shrink: 0; }
+
+    .main-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .header { height: 50px; background: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; border-bottom: 1px solid #f0f0f0; flex-shrink: 0; }
+    .breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+    .breadcrumb-item { color: #999; }
+    .breadcrumb-item.current { color: rgba(0,0,0,0.85); }
+    .breadcrumb-sep { color: #999; }
+    .header-right { display: flex; align-items: center; gap: 16px; }
+    .user-avatar { width: 28px; height: 28px; border-radius: 50%; background: #1890ff; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; cursor: pointer; }
+
+    .content { flex: 1; overflow-y: auto; padding: 20px 24px; }
+
+    .space-box { max-width: 800px; margin: 0 auto; }
+
+    .info-section { background: #fff; border-radius: 8px; padding: 0 24px; margin-bottom: 16px; }
+    .section-title { font-size: 16px; font-weight: 500; color: rgba(0,0,0,0.85); padding: 20px 0 16px; border-bottom: 1px solid #f0f0f0; }
+    .info-item { display: flex; align-items: center; justify-content: space-between; height: 56px; border-bottom: 1px solid #f0f0f0; }
+    .info-item:last-child { border-bottom: none; }
+    .info-left { display: flex; align-items: center; gap: 0; flex: 1; min-width: 0; }
+    .label { width: 80px; flex-shrink: 0; color: rgba(0,0,0,0.45); font-size: 14px; }
+    .info-content { flex: 1; color: rgba(0,0,0,0.85); }
+    .info-content.editing { display: flex; align-items: center; }
+    .edit-input { border: none; border-bottom: 1px solid #1890ff; outline: none; font-size: 14px; padding: 2px 4px; color: rgba(0,0,0,0.85); background: transparent; width: 200px; }
+    .action { flex-shrink: 0; }
+
+    .btn { display: inline-flex; align-items: center; gap: 4px; height: 32px; padding: 0 15px; border-radius: 6px; font-size: 14px; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; }
+    .btn-default { background: #fff; color: rgba(0,0,0,0.85); border-color: #d9d9d9; }
+    .btn-default:hover { color: #1890ff; border-color: #1890ff; }
+    .btn-ghost { background: transparent; color: #1890ff; border-color: #1890ff; }
+    .btn-ghost:hover { background: #e6f7ff; }
+    .btn-primary { background: #1890ff; color: #fff; border-color: #1890ff; }
+    .btn-primary:hover { background: #40a9ff; }
+    .btn-danger { background: #ff4d4f; color: #fff; border-color: #ff4d4f; }
+
+    /* Modal */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 8px; width: 480px; box-shadow: 0 6px 24px rgba(0,0,0,0.2); }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; font-size: 16px; font-weight: 500; }
+    .modal-close { cursor: pointer; color: rgba(0,0,0,0.45); font-size: 18px; line-height: 1; }
+    .modal-close:hover { color: rgba(0,0,0,0.85); }
+    .modal-body { padding: 24px; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 24px; border-top: 1px solid #f0f0f0; }
+
+    /* Steps */
+    .steps { display: flex; align-items: center; margin-bottom: 28px; }
+    .step { display: flex; align-items: center; flex: 1; }
+    .step-circle { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; flex-shrink: 0; }
+    .step-circle.active { background: #1890ff; color: #fff; }
+    .step-circle.done { background: #1890ff; color: #fff; }
+    .step-circle.pending { background: #f0f0f0; color: rgba(0,0,0,0.45); }
+    .step-label { margin-left: 8px; font-size: 13px; }
+    .step-label.active { color: #1890ff; font-weight: 500; }
+    .step-label.pending { color: rgba(0,0,0,0.45); }
+    .step-line { flex: 1; height: 1px; background: #f0f0f0; margin: 0 8px; }
+    .step-line.done { background: #1890ff; }
+
+    .form-item { margin-bottom: 20px; }
+    .form-label { display: block; margin-bottom: 6px; color: rgba(0,0,0,0.85); font-size: 14px; }
+    .form-input { width: 100%; height: 32px; border: 1px solid #d9d9d9; border-radius: 6px; padding: 0 11px; font-size: 14px; outline: none; }
+    .form-input:focus { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.2); }
+    .code-row { display: flex; gap: 8px; }
+    .code-row .form-input { flex: 1; }
+    .send-btn { flex-shrink: 0; height: 32px; padding: 0 12px; border: 1px solid #d9d9d9; border-radius: 6px; background: #fff; cursor: pointer; font-size: 13px; color: #1890ff; white-space: nowrap; }
+    .send-btn:hover { border-color: #1890ff; }
+    .send-btn.disabled { color: rgba(0,0,0,0.25); cursor: not-allowed; }
+    .tip-text { color: rgba(0,0,0,0.45); font-size: 13px; margin-bottom: 16px; }
+
+    .success-content { text-align: center; padding: 20px 0; }
+    .success-icon { font-size: 48px; color: #52c41a; margin-bottom: 12px; }
+    .success-text { font-size: 16px; font-weight: 500; color: rgba(0,0,0,0.85); }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <img src="https://wcaas.wonsec.com/wcaas/static/png/logo_small-86cf36e4.png" alt="logo" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <span style="display:none;font-weight:700;color:#1890ff;font-size:16px;">W-CaaS</span>
+    </div>
+    <nav class="sidebar-menu">
+      <div class="menu-item" onclick="location.href='projects.html'">
+        <svg width="16" height="16" viewBox="0 0 1024 1024" fill="currentColor"><path d="M928 160H96c-17.7 0-32 14.3-32 32v640c0 17.7 14.3 32 32 32h832c17.7 0 32-14.3 32-32V192c0-17.7-14.3-32-32-32zM338 304h348c8.8 0 16 7.2 16 16v48c0 8.8-7.2 16-16 16H338c-8.8 0-16-7.2-16-16v-48c0-8.8 7.2-16 16-16zm0 160h348c8.8 0 16 7.2 16 16v48c0 8.8-7.2 16-16 16H338c-8.8 0-16-7.2-16-16v-48c0-8.8 7.2-16 16-16zm0 160h220c8.8 0 16 7.2 16 16v48c0 8.8-7.2 16-16 16H338c-8.8 0-16-7.2-16-16v-48c0-8.8 7.2-16 16-16z"/></svg>
+        <span>My Projects</span>
+      </div>
+      <div class="menu-item" onclick="location.href='members.html'">
+        <svg width="16" height="16" viewBox="0 0 1024 1024" fill="currentColor"><path d="M824 708H200c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h624c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0-192H200c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h624c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0-192H200c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h624c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8z"/></svg>
+        <span>Organization Members</span>
+      </div>
+      <div class="menu-item" onclick="location.href='project-manage.html'">
+        <svg width="16" height="16" viewBox="0 0 1024 1024" fill="currentColor"><path d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm0 820c-205.4 0-372-166.6-372-372s166.6-372 372-372 372 166.6 372 372-166.6 372-372 372z"/></svg>
+        <span>Project Management</span>
+      </div>
+    </nav>
+  </aside>
+
+  <div class="main-wrap">
+    <header class="header">
+      <nav class="breadcrumb">
+        <span class="breadcrumb-item">Certification Platform</span>
+        <span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-item current">My Space</span>
+      </nav>
+      <div class="header-right">
+        <div class="user-avatar" title="张三">张</div>
+      </div>
+    </header>
+
+    <div class="content">
+      <div class="space-box">
+        <!-- Personal Info -->
+        <div class="info-section">
+          <div class="section-title">Personal Info</div>
+          <div class="info-item">
+            <div class="info-left">
+              <div class="label">Name</div>
+              <div class="info-content" id="nameDisplay">张三</div>
+              <div class="info-content editing" id="nameEdit" style="display:none;">
+                <input class="edit-input" id="nameInput" value="张三" />
+              </div>
+            </div>
+            <div class="action">
+              <button class="btn btn-default" id="editNameBtn" onclick="toggleEditName()">Edit</button>
+              <button class="btn btn-ghost" id="saveNameBtn" style="display:none;" onclick="saveEditName()">Done</button>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-left">
+              <div class="label">Organization</div>
+              <div class="info-content">某某科技有限公司</div>
+            </div>
+            <div class="action"></div>
+          </div>
+          <div class="info-item">
+            <div class="info-left">
+              <div class="label">Interface Language</div>
+              <div class="info-content">Simplified Chinese</div>
+            </div>
+            <div class="action"></div>
+          </div>
+        </div>
+
+        <!-- Security Info -->
+        <div class="info-section">
+          <div class="section-title">Security Info</div>
+          <div class="info-item">
+            <div class="info-left">
+              <div class="label">Phone</div>
+              <div class="info-content">138****8888</div>
+            </div>
+            <div class="action">
+              <button class="btn btn-default" onclick="openModal('phone')">更换Phone号</button>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-left">
+              <div class="label">Email</div>
+              <div class="info-content">zhang***@example.com</div>
+            </div>
+            <div class="action">
+              <button class="btn btn-default" onclick="openModal('email')">更换Email</button>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-left">
+              <div class="label">Password</div>
+              <div class="info-content">••••••••</div>
+            </div>
+            <div class="action">
+              <button class="btn btn-default" onclick="openModal('password')">更换Password</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 更换Phone号/Email弹窗 -->
+  <div class="modal-overlay" id="contactModal">
+    <div class="modal">
+      <div class="modal-header">
+        <span id="modalTitle">更换Phone号</span>
+        <span class="modal-close" onclick="closeModal()">✕</span>
+      </div>
+      <div class="modal-body">
+        <div class="steps">
+          <div class="step">
+            <div class="step-circle" id="step1Circle">1</div>
+            <span class="step-label active" id="step1Label">Verify Identity</span>
+          </div>
+          <div class="step-line" id="line1"></div>
+          <div class="step">
+            <div class="step-circle pending" id="step2Circle">2</div>
+            <span class="step-label pending" id="step2Label">更换信息</span>
+          </div>
+          <div class="step-line" id="line2"></div>
+          <div class="step">
+            <div class="step-circle pending" id="step3Circle">3</div>
+            <span class="step-label pending" id="step3Label">Done</span>
+          </div>
+        </div>
+
+        <!-- Step 1 -->
+        <div id="stepContent1">
+          <p class="tip-text" id="verifyTip">验证码将发送至您当前绑定的Phone 138****8888</p>
+          <div class="form-item">
+            <label class="form-label">验证码</label>
+            <div class="code-row">
+              <input class="form-input" placeholder="Enter verification code" id="verifyCode" />
+              <button class="send-btn" id="sendVerifyBtn" onclick="startCountdown('sendVerifyBtn')">Send Code</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div id="stepContent2" style="display:none;">
+          <div class="form-item" id="newContactField">
+            <label class="form-label" id="newContactLabel">新Phone号</label>
+            <input class="form-input" placeholder="请输入新Phone号" id="newContactInput" />
+          </div>
+          <div class="form-item">
+            <label class="form-label">验证码</label>
+            <div class="code-row">
+              <input class="form-input" placeholder="Enter verification code" id="newCode" />
+              <button class="send-btn" id="sendNewBtn" onclick="startCountdown('sendNewBtn')">Send Code</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div id="stepContent3" style="display:none;">
+          <div class="success-content">
+            <div class="success-icon">✓</div>
+            <div class="success-text" id="successText">Phone号更换成功</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-default" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" id="modalNextBtn" onclick="nextStep()">Next</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 更换Password弹窗 -->
+  <div class="modal-overlay" id="passwordModal">
+    <div class="modal">
+      <div class="modal-header">
+        <span>更换Password</span>
+        <span class="modal-close" onclick="closePwdModal()">✕</span>
+      </div>
+      <div class="modal-body">
+        <div class="steps">
+          <div class="step">
+            <div class="step-circle active" id="pwdStep1Circle">1</div>
+            <span class="step-label active">Verify Identity</span>
+          </div>
+          <div class="step-line" id="pwdLine1"></div>
+          <div class="step">
+            <div class="step-circle pending" id="pwdStep2Circle">2</div>
+            <span class="step-label pending" id="pwdStep2Label">设置新Password</span>
+          </div>
+          <div class="step-line" id="pwdLine2"></div>
+          <div class="step">
+            <div class="step-circle pending" id="pwdStep3Circle">3</div>
+            <span class="step-label pending">Done</span>
+          </div>
+        </div>
+
+        <div id="pwdStepContent1">
+          <p class="tip-text">验证码将发送至您当前绑定的Phone 138****8888</p>
+          <div class="form-item">
+            <label class="form-label">验证码</label>
+            <div class="code-row">
+              <input class="form-input" placeholder="Enter verification code" />
+              <button class="send-btn" id="sendPwdBtn" onclick="startCountdown('sendPwdBtn')">Send Code</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="pwdStepContent2" style="display:none;">
+          <div class="form-item">
+            <label class="form-label">新Password</label>
+            <input class="form-input" type="password" placeholder="8-20位，含大小写字母和数字" />
+          </div>
+          <div class="form-item">
+            <label class="form-label">确认Password</label>
+            <input class="form-input" type="password" placeholder="请再次输入新Password" />
+          </div>
+        </div>
+
+        <div id="pwdStepContent3" style="display:none;">
+          <div class="success-content">
+            <div class="success-icon">✓</div>
+            <div class="success-text">Password更换成功</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-default" onclick="closePwdModal()">Cancel</button>
+        <button class="btn btn-primary" id="pwdNextBtn" onclick="nextPwdStep()">Next</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentStep = 1;
+    let pwdStep = 1;
+    let modalType = '';
+
+    function toggleEditName() {
+      document.getElementById('nameDisplay').style.display = 'none';
+      document.getElementById('nameEdit').style.display = 'flex';
+      document.getElementById('editNameBtn').style.display = 'none';
+      document.getElementById('saveNameBtn').style.display = 'inline-flex';
+      document.getElementById('nameInput').focus();
+    }
+
+    function saveEditName() {
+      const val = document.getElementById('nameInput').value.trim() || '张三';
+      document.getElementById('nameDisplay').textContent = val;
+      document.getElementById('nameDisplay').style.display = 'block';
+      document.getElementById('nameEdit').style.display = 'none';
+      document.getElementById('editNameBtn').style.display = 'inline-flex';
+      document.getElementById('saveNameBtn').style.display = 'none';
+    }
+
+    function openModal(type) {
+      modalType = type;
+      currentStep = 1;
+      if (type === 'password') {
+        document.getElementById('passwordModal').classList.add('open');
+        return;
+      }
+      const titles = { phone: '更换Phone号', email: '更换Email' };
+      const tips = { phone: '验证码将发送至您当前绑定的Phone 138****8888', email: '验证码将发送至您当前绑定的Email zhang***@example.com' };
+      const labels = { phone: '新Phone号', email: '新Email' };
+      const placeholders = { phone: '请输入新Phone号', email: '请输入新Email' };
+      document.getElementById('modalTitle').textContent = titles[type];
+      document.getElementById('verifyTip').textContent = tips[type];
+      document.getElementById('newContactLabel').textContent = labels[type];
+      document.getElementById('newContactInput').placeholder = placeholders[type];
+      document.getElementById('stepContent1').style.display = 'block';
+      document.getElementById('stepContent2').style.display = 'none';
+      document.getElementById('stepContent3').style.display = 'none';
+      setStepUI(1);
+      document.getElementById('contactModal').classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('contactModal').classList.remove('open');
+    }
+
+    function closePwdModal() {
+      document.getElementById('passwordModal').classList.remove('open');
+      pwdStep = 1;
+    }
+
+    function setStepUI(step) {
+      const circles = ['step1Circle','step2Circle','step3Circle'];
+      const labels = ['step1Label','step2Label','step3Label'];
+      const lines = ['line1','line2'];
+      circles.forEach((id, i) => {
+        const el = document.getElementById(id);
+        el.className = 'step-circle ' + (i + 1 <= step ? (i + 1 < step ? 'done' : 'active') : 'pending');
+      });
+      labels.forEach((id, i) => {
+        const el = document.getElementById(id);
+        el.className = 'step-label ' + (i + 1 === step ? 'active' : (i + 1 < step ? '' : 'pending'));
+      });
+      lines.forEach((id, i) => {
+        document.getElementById(id).className = 'step-line ' + (i + 1 < step ? 'done' : '');
+      });
+    }
+
+    function nextStep() {
+      if (currentStep === 1) {
+        currentStep = 2;
+        document.getElementById('stepContent1').style.display = 'none';
+        document.getElementById('stepContent2').style.display = 'block';
+        setStepUI(2);
+      } else if (currentStep === 2) {
+        currentStep = 3;
+        document.getElementById('stepContent2').style.display = 'none';
+        document.getElementById('stepContent3').style.display = 'block';
+        document.getElementById('successText').textContent = modalType === 'phone' ? 'Phone号更换成功' : 'Email更换成功';
+        document.getElementById('modalNextBtn').textContent = 'Done';
+        setStepUI(3);
+      } else {
+        closeModal();
+      }
+    }
+
+    function nextPwdStep() {
+      if (pwdStep === 1) {
+        pwdStep = 2;
+        document.getElementById('pwdStepContent1').style.display = 'none';
+        document.getElementById('pwdStepContent2').style.display = 'block';
+        document.getElementById('pwdStep2Circle').className = 'step-circle active';
+        document.getElementById('pwdStep2Label').className = 'step-label active';
+        document.getElementById('pwdLine1').className = 'step-line done';
+      } else if (pwdStep === 2) {
+        pwdStep = 3;
+        document.getElementById('pwdStepContent2').style.display = 'none';
+        document.getElementById('pwdStepContent3').style.display = 'block';
+        document.getElementById('pwdStep3Circle').className = 'step-circle active';
+        document.getElementById('pwdLine2').className = 'step-line done';
+        document.getElementById('pwdNextBtn').textContent = 'Done';
+      } else {
+        closePwdModal();
+      }
+    }
+
+    function startCountdown(btnId) {
+      const btn = document.getElementById(btnId);
+      let count = 60;
+      btn.classList.add('disabled');
+      btn.textContent = `重新发送(${count}s)`;
+      const timer = setInterval(() => {
+        count--;
+        if (count <= 0) {
+          clearInterval(timer);
+          btn.classList.remove('disabled');
+          btn.textContent = 'Send Code';
+        } else {
+          btn.textContent = `重新发送(${count}s)`;
+        }
+      }, 1000);
+    }
+  </script>
+</body>
+</html>

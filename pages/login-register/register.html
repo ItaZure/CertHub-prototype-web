@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CertHub - 账号注册</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "PingFang SC", "Source Han Sans", "Microsoft YaHei", sans-serif;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .login-page {
+      display: flex;
+      width: 100%;
+      height: 100vh;
+    }
+
+    .login-bg {
+      flex: 1;
+      background: url('https://wcaas.wonsec.com/wcaas/static/png/front_bg-edc55f32.png') center/cover no-repeat;
+      position: relative;
+    }
+
+    .login-box {
+      width: 580px;
+      flex-shrink: 0;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0 90px 24px;
+      position: relative;
+      overflow-y: auto;
+    }
+
+    .form-wrapper {
+      width: 100%;
+      padding: 40px 0 20px;
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .login-title {
+      font-weight: 700;
+      font-size: 30px;
+      line-height: 38px;
+      color: #000;
+    }
+
+    .login-subtitle {
+      line-height: 24px;
+      font-size: 16px;
+      font-weight: 500;
+      color: rgba(0,0,0,0.86);
+      margin-top: 4px;
+    }
+
+    /* Drag verify */
+    .drag-verify {
+      width: 100%;
+      height: 40px;
+      background: #f0f0f0;
+      border-radius: 4px;
+      position: relative;
+      margin-bottom: 20px;
+      overflow: hidden;
+      user-select: none;
+      border: 1px solid #d9d9d9;
+    }
+
+    .drag-verify-fill {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      background: #d4edda;
+      transition: width 0.1s;
+      border-radius: 4px 0 0 4px;
+    }
+
+    .drag-verify-text {
+      position: absolute;
+      width: 100%;
+      text-align: center;
+      line-height: 40px;
+      font-size: 13px;
+      color: #666;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .drag-verify-handle {
+      position: absolute;
+      left: 0; top: 0;
+      width: 40px; height: 40px;
+      background: #fff;
+      border: 1px solid #d9d9d9;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      z-index: 3;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      font-size: 18px;
+      color: #1890ff;
+    }
+
+    .drag-verify.success .drag-verify-fill { background: #b7eb8f; }
+    .drag-verify.success .drag-verify-text { color: #52c41a; }
+    .drag-verify.success .drag-verify-handle { color: #52c41a; cursor: default; }
+
+    /* Form */
+    .form-item {
+      margin-bottom: 20px;
+    }
+
+    .input-wrap {
+      display: flex;
+      align-items: center;
+      border: 1px solid #d9d9d9;
+      border-radius: 6px;
+      height: 40px;
+      padding: 0 12px;
+      transition: border-color 0.2s;
+      background: #fff;
+    }
+
+    .input-wrap:focus-within {
+      border-color: #1890ff;
+      box-shadow: 0 0 0 2px rgba(24,144,255,0.2);
+    }
+
+    .input-wrap.error {
+      border-color: #ff4d4f;
+    }
+
+    .input-icon {
+      color: #1890ff;
+      margin-right: 10px;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .input-wrap input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 14px;
+      background: transparent;
+      color: #000;
+    }
+
+    .input-wrap input::placeholder { color: #bfbfbf; }
+
+    .send-code-btn {
+      flex-shrink: 0;
+      color: #1890ff;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .send-code-btn:hover { color: #40a9ff; }
+    .send-code-btn.disabled { color: rgba(0,0,0,0.25); cursor: not-allowed; }
+
+    .err-msg {
+      color: #ff4d4f;
+      font-size: 12px;
+      margin-top: 4px;
+      min-height: 18px;
+    }
+
+    .submit-btn {
+      width: 100%;
+      height: 40px;
+      font-size: 16px;
+      margin-top: 8px;
+      border-radius: 8px;
+      background-color: #1890ff;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .submit-btn:hover { background-color: #40a9ff; }
+
+    .submit-btn:disabled {
+      background-color: #8bc7ff;
+      cursor: not-allowed;
+    }
+
+    .footer {
+      position: absolute;
+      bottom: 16px;
+      left: 0; right: 0;
+      text-align: center;
+      font-size: 12px;
+      color: rgba(0,0,0,0.45);
+    }
+
+    .footer a { color: rgba(0,0,0,0.45); text-decoration: none; }
+    .footer a:hover { color: #1890ff; }
+
+    .back-login {
+      text-align: center;
+      margin-top: 12px;
+      font-size: 13px;
+      color: rgba(0,0,0,0.45);
+    }
+
+    .back-login a { color: #1890ff; text-decoration: none; }
+    .back-login a:hover { color: #40a9ff; }
+
+    .lang-btn {
+      position: absolute;
+      top: 16px; right: 20px;
+      display: flex; align-items: center; gap: 5px;
+      width: 72px; height: 30px;
+      border: 1px solid #d9d9d9; border-radius: 6px;
+      background: #fff; color: rgba(0,0,0,0.55);
+      font-size: 13px; cursor: pointer;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+      user-select: none; z-index: 10;
+      justify-content: center;
+    }
+    .lang-btn:hover { border-color: #1890ff; color: #1890ff; background: #e6f7ff; }
+    .lang-btn svg { flex-shrink: 0; }
+  </style>
+</head>
+<body>
+<div class="login-page">
+  <div class="login-bg"></div>
+  <div class="login-box">
+    <!-- 语言切换按钮 -->
+    <button class="lang-btn" id="langBtn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>
+      </svg>
+      <span id="langLabel">EN</span>
+    </button>
+    <div class="form-wrapper">
+      <div class="login-header">
+        <div class="login-title" id="pageTitle">W-CaaS认证平台</div>
+        <div class="login-subtitle" id="pageSubtitle">账号注册</div>
+      </div>
+
+      <!-- 滑块验证 -->
+      <div class="drag-verify" id="dragVerify">
+        <div class="drag-verify-fill" id="dragFill"></div>
+        <div class="drag-verify-text" id="dragText">请按住滑块，拖动到最右边</div>
+        <div class="drag-verify-handle" id="dragHandle">››</div>
+      </div>
+
+      <!-- 称呼 -->
+      <div class="form-item">
+        <div class="input-wrap" id="wrapUserName">
+          <span class="input-icon">☺</span>
+          <input type="text" id="userName" placeholder="请输入称呼" />
+        </div>
+        <div class="err-msg" id="errUserName"></div>
+      </div>
+
+      <!-- 手机号 -->
+      <div class="form-item" id="phoneItem">
+        <div class="input-wrap" id="wrapPhone">
+          <span class="input-icon">📱</span>
+          <input type="tel" id="phone" placeholder="请输入手机号" maxlength="11" />
+        </div>
+        <div class="err-msg" id="errPhone"></div>
+      </div>
+
+      <!-- 邮箱 -->
+      <div class="form-item">
+        <div class="input-wrap" id="wrapEmail">
+          <span class="input-icon">✉</span>
+          <input type="email" id="email" placeholder="请输入电子邮箱" />
+        </div>
+        <div class="err-msg" id="errEmail"></div>
+      </div>
+
+      <!-- 密码 -->
+      <div class="form-item">
+        <div class="input-wrap" id="wrapPassword">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="password" placeholder="请输入登录密码" autocomplete="off" />
+        </div>
+        <div class="err-msg" id="errPassword"></div>
+      </div>
+
+      <!-- 确认密码 -->
+      <div class="form-item">
+        <div class="input-wrap" id="wrapConfirmPassword">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="confirmPassword" placeholder="请再次输入密码以确认" autocomplete="off" />
+        </div>
+        <div class="err-msg" id="errConfirmPassword"></div>
+      </div>
+
+      <!-- 验证码 -->
+      <div class="form-item">
+        <div class="input-wrap" id="wrapCode">
+          <span class="input-icon">🔑</span>
+          <input type="text" id="code" placeholder="请输入6位验证码" maxlength="6" />
+          <span class="send-code-btn" id="sendCodeBtn">发送验证码</span>
+        </div>
+        <div class="err-msg" id="errCode"></div>
+      </div>
+
+      <button class="submit-btn" id="submitBtn" disabled>注册</button>
+
+      <div class="back-login" id="backLogin">已有账号？<a href="login.html" id="backLoginLink">立即登录</a></div>
+    </div>
+
+    <div class="footer">
+      Copyright © 2024 CertHub &nbsp;|&nbsp; <a href="#" id="footerPrivacy">隐私政策</a> &nbsp;|&nbsp; <a href="#" id="footerTerms">服务条款</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── 滑块验证 ──
+  let isPassing = false;
+  const dragVerify = document.getElementById('dragVerify');
+  const dragHandle = document.getElementById('dragHandle');
+  const dragFill   = document.getElementById('dragFill');
+  const dragText   = document.getElementById('dragText');
+
+  let dragging = false, startX = 0, maxX = 0;
+
+  dragHandle.addEventListener('mousedown', (e) => {
+    if (isPassing) return;
+    dragging = true;
+    startX = e.clientX;
+    maxX = dragVerify.offsetWidth - dragHandle.offsetWidth;
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    let dx = Math.min(Math.max(e.clientX - startX, 0), maxX);
+    dragHandle.style.left = dx + 'px';
+    dragFill.style.width = (dx + dragHandle.offsetWidth) + 'px';
+    if (dx >= maxX - 2) {
+      dragging = false;
+      isPassing = true;
+      dragVerify.classList.add('success');
+      dragText.textContent = '验证成功';
+      dragHandle.textContent = '✓';
+      checkSubmit();
+    }
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (dragging && !isPassing) {
+      dragging = false;
+      dragHandle.style.left = '0';
+      dragFill.style.width = '0';
+    }
+    dragging = false;
+  });
+
+  // ── 手机号只允许数字 ──
+  document.getElementById('phone').addEventListener('input', (e) => {
+    e.target.value = e.target.value.replace(/[^0-9]/g, '');
+  });
+
+  // ── 邮箱过滤非法字符 ──
+  document.getElementById('email').addEventListener('input', (e) => {
+    e.target.value = e.target.value.replace(/[^0-9a-zA-Z@.\-_]/g, '');
+  });
+
+  // ── 发送验证码 ──
+  let smsTimer = 0, smsInterval = null;
+  const sendCodeBtn = document.getElementById('sendCodeBtn');
+
+  sendCodeBtn.addEventListener('click', () => {
+    if (smsTimer > 0) return;
+    const phone = document.getElementById('phone').value;
+    const email = document.getElementById('email').value;
+    if (!phone && !email) { alert('请先输入手机号或邮箱'); return; }
+    if (phone && !/^1[3-9]\d{9}$/.test(phone)) { alert('请输入正确格式的手机号'); return; }
+    if (!phone && email && !/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(email)) {
+      alert('请输入正确格式的邮箱'); return;
+    }
+    // mock: 直接开始倒计时
+    smsTimer = 60;
+    sendCodeBtn.classList.add('disabled');
+    sendCodeBtn.textContent = `重新发送(${smsTimer}s)`;
+    smsInterval = setInterval(() => {
+      smsTimer--;
+      if (smsTimer <= 0) {
+        clearInterval(smsInterval);
+        sendCodeBtn.classList.remove('disabled');
+        sendCodeBtn.textContent = '发送验证码';
+      } else {
+        sendCodeBtn.textContent = `重新发送(${smsTimer}s)`;
+      }
+    }, 1000);
+  });
+
+  // ── 表单验证 ──
+  function validate() {
+    const userName = document.getElementById('userName').value.trim();
+    const phone    = document.getElementById('phone').value.trim();
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const confirm  = document.getElementById('confirmPassword').value;
+    const code     = document.getElementById('code').value.trim();
+
+    const phoneValid = !phone || /^1[3-9]\d{9}$/.test(phone);
+    const emailValid = !email || /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(email);
+    const pwdValid   = password.length >= 8 && password.length <= 20
+                       && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password);
+    const pwdMatch   = password === confirm;
+    const codeValid  = code.length === 6;
+
+    const contactValid = currentLang === 'en' ? !!email : !!(phone || email);
+    return userName && contactValid && phoneValid && emailValid
+           && password && pwdValid && confirm && pwdMatch && codeValid;
+  }
+
+  function checkSubmit() {
+    document.getElementById('submitBtn').disabled = !(isPassing && validate());
+  }
+
+  ['userName','phone','email','password','confirmPassword','code'].forEach(id => {
+    document.getElementById(id).addEventListener('input', checkSubmit);
+  });
+
+  // ── 提交 ──
+  document.getElementById('submitBtn').addEventListener('click', () => {
+    alert(currentLang === 'zh' ? '注册成功！' : 'Registration successful!');
+  });
+
+  // ── 语言切换 ──
+  const i18n = {
+    zh: {
+      langLabel: 'EN',
+      pageTitle: 'W-CaaS认证平台',
+      pageSubtitle: '账号注册',
+      sliderDrag: '请按住滑块，拖动到最右边',
+      sliderDone: '验证成功',
+      userNamePh: '请输入称呼',
+      phonePh: '请输入手机号',
+      emailPh: '请输入电子邮箱',
+      passwordPh: '请输入登录密码',
+      confirmPh: '请再次输入密码以确认',
+      codePh: '请输入6位验证码',
+      sendCode: '发送验证码',
+      sendCodeCountdown: (s) => `重新发送(${s}s)`,
+      submitBtn: '注册',
+      backLogin: '已有账号？',
+      backLoginLink: '立即登录',
+      footerPrivacy: '隐私政策',
+      footerTerms: '服务条款',
+    },
+    en: {
+      langLabel: '中文',
+      pageTitle: 'W-CaaS Platform',
+      pageSubtitle: 'Create Account',
+      sliderDrag: 'Drag the slider to the right',
+      sliderDone: 'Verified',
+      userNamePh: 'Enter your name',
+      phonePh: 'Enter phone number',
+      emailPh: 'Enter email address',
+      passwordPh: 'Enter password',
+      confirmPh: 'Confirm password',
+      codePh: 'Enter 6-digit code',
+      sendCode: 'Send Code',
+      sendCodeCountdown: (s) => `Resend in ${s}s`,
+      submitBtn: 'Register',
+      backLogin: 'Already have an account? ',
+      backLoginLink: 'Log in',
+      footerPrivacy: 'Privacy Policy',
+      footerTerms: 'Terms of Service',
+    }
+  };
+
+  let currentLang = 'zh';
+
+  function applyLang() {
+    const t = i18n[currentLang];
+    document.getElementById('langLabel').textContent = t.langLabel;
+    document.getElementById('pageTitle').textContent = t.pageTitle;
+    document.getElementById('pageSubtitle').textContent = t.pageSubtitle;
+    if (!isPassing) document.getElementById('dragText').textContent = t.sliderDrag;
+    document.getElementById('userName').placeholder = t.userNamePh;
+    document.getElementById('phone').placeholder = t.phonePh;
+    document.getElementById('email').placeholder = t.emailPh;
+    document.getElementById('password').placeholder = t.passwordPh;
+    document.getElementById('confirmPassword').placeholder = t.confirmPh;
+    document.getElementById('code').placeholder = t.codePh;
+    if (smsTimer <= 0) document.getElementById('sendCodeBtn').textContent = t.sendCode;
+    document.getElementById('submitBtn').textContent = t.submitBtn;
+    document.getElementById('backLogin').childNodes[0].textContent = t.backLogin;
+    document.getElementById('backLoginLink').textContent = t.backLoginLink;
+    document.getElementById('footerPrivacy').textContent = t.footerPrivacy;
+    document.getElementById('footerTerms').textContent = t.footerTerms;
+    // 英文模式隐藏手机号字段
+    document.getElementById('phoneItem').style.display = currentLang === 'en' ? 'none' : '';
+    document.documentElement.lang = currentLang === 'zh' ? 'zh-CN' : 'en';
+    checkSubmit();
+  }
+
+  document.getElementById('langBtn').addEventListener('click', () => {
+    currentLang = currentLang === 'zh' ? 'en' : 'zh';
+    applyLang();
+  });
+</script>
+</body>
+</html>

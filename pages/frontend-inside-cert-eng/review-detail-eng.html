@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>Review Detail - CertHub</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      font-size: 14px; color: rgba(0,0,0,0.85);
+      background: #f5fafc; height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+    }
+
+    /* ── Top bar ── */
+    .top-bar {
+      height: 50px; background: #fff; border-bottom: 1px solid #f0f0f0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px; flex-shrink: 0; z-index: 10;
+    }
+    .top-bar-left { display: flex; align-items: center; gap: 12px; }
+    .back-btn {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 13px; color: rgba(0,0,0,.55); cursor: pointer;
+      padding: 4px 8px; border-radius: 4px; transition: all .15s;
+      text-decoration: none; border: none; background: none;
+    }
+    .back-btn:hover { color: #1890ff; background: #e6f7ff; }
+    .top-divider { width: 1px; height: 18px; background: #e8e8e8; }
+    .doc-title { font-size: 14px; font-weight: 600; color: rgba(0,0,0,.85); }
+    .ver-badge {
+      font-family: 'SFMono-Regular', Consolas, monospace; font-size: 11px;
+      padding: 1px 7px; border-radius: 3px; background: #f5f5f5;
+      color: rgba(0,0,0,.55); border: 1px solid #e8e8e8;
+    }
+    .source-badge {
+      display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 3px;
+      font-size: 11px; font-weight: 500;
+    }
+    .source-badge.platform { background: #e6f7ff; color: #1890ff; border: 1px solid #91d5ff; }
+    .source-badge.archive  { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+
+    .top-bar-right { display: flex; align-items: center; gap: 10px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 14px; border-radius: 4px; font-size: 13px;
+      cursor: pointer; border: 1px solid #d9d9d9;
+      background: #fff; color: rgba(0,0,0,.65); transition: all .15s; white-space: nowrap;
+    }
+    .btn:hover { border-color: #1890ff; color: #1890ff; }
+    .btn.primary { background: #1890ff; border-color: #1890ff; color: #fff; }
+    .btn.primary:hover { background: #40a9ff; border-color: #40a9ff; }
+
+    /* ── Split layout ── */
+    .split-container {
+      flex: 1; display: flex; overflow: hidden;
+    }
+
+    /* ── TOC panel ── */
+    .toc-panel {
+      width: 200px; flex-shrink: 0; display: none; flex-direction: column;
+      border-right: 1px solid #e8e8e8; background: #fafafa; overflow: hidden;
+    }
+    .toc-panel.visible { display: flex; }
+    .toc-scroll { flex: 1; overflow-y: auto; padding: 20px 0 20px; }
+    .toc-title {
+      font-size: 11px; font-weight: 600; color: rgba(0,0,0,.35);
+      text-transform: uppercase; letter-spacing: .5px;
+      padding: 0 16px 10px;
+    }
+    .toc-item {
+      display: block; padding: 4px 16px; font-size: 12px; line-height: 1.5;
+      color: rgba(0,0,0,.55); cursor: pointer; text-decoration: none;
+      transition: all .15s; border-left: 2px solid transparent;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .toc-item:hover { color: rgba(0,0,0,.85); background: #f0f0f0; }
+    .toc-item.active { color: #1890ff; border-left-color: #1890ff; background: #e6f7ff; font-weight: 500; }
+    .toc-item.h3 { padding-left: 28px; font-size: 11.5px; }
+
+    /* ── Doc panel ── */
+    .doc-panel {
+      flex: 1; display: flex; flex-direction: column;
+      border-right: 1px solid #e8e8e8; background: #fff; overflow: hidden;
+    }
+    .panel-header {
+      height: 40px; display: flex; align-items: center; padding: 0 20px;
+      font-size: 12px; font-weight: 600; color: rgba(0,0,0,.45);
+      letter-spacing: .5px; text-transform: uppercase;
+      border-bottom: 1px solid #f0f0f0; flex-shrink: 0; background: #fafafa;
+    }
+    .doc-scroll {
+      flex: 1; overflow-y: auto; padding: 32px 40px;
+    }
+    .doc-scroll.pdf-mode { padding: 0; overflow: hidden; }
+    .doc-pdf { width: 100%; height: 100%; border: none; display: block; }
+    .doc-content { max-width: 720px; margin: 0 auto; line-height: 1.8; }
+    .doc-content h1 { font-size: 20px; font-weight: 700; margin-bottom: 24px; color: rgba(0,0,0,.85); }
+    .doc-content h2 { font-size: 15px; font-weight: 600; margin: 28px 0 12px; color: rgba(0,0,0,.85); border-bottom: 1px solid #f0f0f0; padding-bottom: 6px; }
+    .doc-content h3 { font-size: 14px; font-weight: 600; margin: 20px 0 8px; color: rgba(0,0,0,.75); }
+    .doc-content p { margin-bottom: 12px; color: rgba(0,0,0,.75); font-size: 13.5px; }
+    .doc-content table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+    .doc-content th { background: #fafafa; padding: 8px 12px; text-align: left; border: 1px solid #e8e8e8; font-weight: 600; color: rgba(0,0,0,.65); }
+    .doc-content td { padding: 8px 12px; border: 1px solid #e8e8e8; color: rgba(0,0,0,.75); }
+    .doc-content ul { padding-left: 20px; margin-bottom: 12px; }
+    .doc-content li { margin-bottom: 6px; color: rgba(0,0,0,.75); font-size: 13.5px; }
+    .doc-ref-id { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 12px; color: rgba(0,0,0,.45); }
+
+    /* ── Report panel ── */
+    .report-panel {
+      width: 600px; flex-shrink: 0; display: flex; flex-direction: column;
+      background: #fff; overflow: hidden;
+    }
+    .report-scroll { flex: 1; overflow-y: auto; padding: 20px; }
+
+    .report-meta {
+      background: #fafafa; border: 1px solid #f0f0f0; border-radius: 6px;
+      padding: 12px 14px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 6px;
+    }
+    .meta-row { display: flex; align-items: baseline; gap: 8px; font-size: 12px; }
+    .meta-label { color: rgba(0,0,0,.45); width: 56px; flex-shrink: 0; }
+    .meta-val { color: rgba(0,0,0,.75); flex: 1; }
+    .meta-scope-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+    .meta-scope-tag {
+      display: inline-flex; padding: 1px 6px; border-radius: 3px; font-size: 11px;
+      font-family: 'SFMono-Regular', Consolas, monospace; font-weight: 600;
+      background: #f5f5f5; color: rgba(0,0,0,.55); border: 1px solid #e8e8e8;
+    }
+
+    .report-section { margin-bottom: 16px; }
+
+    /* ── Tabs ── */
+    .report-tabs {
+      display: flex; border-bottom: 1px solid #f0f0f0; margin-bottom: 16px; flex-shrink: 0;
+    }
+    .tab-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 10px 16px; font-size: 13px; font-weight: 500;
+      color: rgba(0,0,0,.55); background: none; border: none;
+      border-bottom: 2px solid transparent; margin-bottom: -1px;
+      cursor: pointer; transition: all .15s; white-space: nowrap;
+    }
+    .tab-btn:hover { color: rgba(0,0,0,.85); }
+    .tab-btn.active { color: #1890ff; border-bottom-color: #1890ff; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .section-hd {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; font-weight: 600; margin-bottom: 10px; color: rgba(0,0,0,.75);
+    }
+    .section-count {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 20px; height: 18px; padding: 0 5px; border-radius: 9px;
+      font-size: 11px; font-weight: 600;
+    }
+    .section-count.fail { background: #fff1f0; color: #ff4d4f; border: 1px solid #ffa39e; }
+    .section-count.pass { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+
+    .fail-item {
+      border: 1px solid #ffe7e7; border-radius: 6px; margin-bottom: 10px; overflow: hidden;
+    }
+    .fail-item:last-child { margin-bottom: 0; }
+    .fail-item-hd {
+      padding: 8px 12px; background: #fff8f8; border-bottom: 1px solid #ffe7e7;
+    }
+    .fail-wu-id {
+      font-family: 'SFMono-Regular', Consolas, monospace; font-size: 12px;
+      font-weight: 600; color: rgba(0,0,0,.75);
+    }
+    .fail-item-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+    .field-label {
+      font-size: 10px; font-weight: 600; color: rgba(0,0,0,.35);
+      text-transform: uppercase; letter-spacing: .5px;
+    }
+    .cem-text { font-size: 12px; color: rgba(0,0,0,.55); line-height: 1.6; }
+    .obs-text { font-size: 12.5px; color: rgba(0,0,0,.75); line-height: 1.7; }
+
+    .pass-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+    .pass-tag {
+      display: inline-flex; padding: 2px 7px; border-radius: 3px; font-size: 11px;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      background: #f6ffed; color: #389e0d; border: 1px solid #b7eb8f;
+    }
+
+    /* Toast */
+    .toast-wrap {
+      position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
+      z-index: 9999; display: flex; flex-direction: column; align-items: center;
+      gap: 8px; pointer-events: none;
+    }
+    .toast {
+      background: rgba(0,0,0,.75); color: #fff; padding: 7px 16px;
+      border-radius: 6px; font-size: 13px; opacity: 1; transition: opacity .3s;
+    }
+    .toast.fade { opacity: 0; }
+  </style>
+</head>
+<body>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- Top bar -->
+<header class="top-bar">
+  <div class="top-bar-left">
+    <a class="back-btn" href="review-report-eng.html">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Review Reports
+    </a>
+    <div class="top-divider"></div>
+    <span class="doc-title" id="topDocTitle"></span>
+    <span class="ver-badge" id="topVersion" style="display:none"></span>
+    <span class="source-badge" id="topSource"></span>
+  </div>
+  <div class="top-bar-right">
+    <button class="btn" onclick="exportMd()">
+      <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Export MD
+    </button>
+  </div>
+</header>
+
+<!-- Split body -->
+<div class="split-container">
+
+  <!-- TOC (platform docs only) -->
+  <div class="toc-panel" id="tocPanel">
+    <div class="toc-scroll">
+      <div class="toc-title">Contents</div>
+      <nav id="tocNav"></nav>
+    </div>
+  </div>
+
+  <!-- Left: document -->
+  <div class="doc-panel">
+    <div class="doc-scroll">
+      <div class="doc-content" id="docContent"></div>
+    </div>
+  </div>
+
+  <!-- Right: report -->
+  <div class="report-panel">
+    <div class="report-scroll" id="reportContent"></div>
+  </div>
+
+</div>
+
+<script>
+// ── Mock 数据（与 review-reports.html 保持一致）────────────────────────────
+const REPORTS = [
+  {
+    id: 'r1',
+    docName: 'Demo-ASE_ST-Security_Target-V1.0',
+    docSource: 'platform',
+    version: 'S1-V1.0',
+    scope: ['ASE_INT.1', 'ASE_OBJ.2', 'ASE_SPD.1', 'ASE_REQ.2'],
+    initiator: 'Phil',
+    startedAt: Date.now() - 1000 * 3600 * 2,
+    completedAt: Date.now() - 1000 * 3600 * 2 + 1000 * 60 * 5,
+    status: 'completed',
+    failItems: [
+      {
+        id: 'ASE_INT.1-2',
+        cem: 'The evaluator shall check that the ST reference uniquely identifies the ST.',
+        observation: 'The ST reference "TEE-ST-2024-001" does not embed a version identifier, making it indistinguishable from previous iterations. A unique version-qualified reference is required.',
+      },
+      {
+        id: 'ASE_OBJ.2-1',
+        cem: 'The evaluator shall check that the statement of security objectives identifies and defines the security objectives for the TOE and the operational environment.',
+        observation: 'Section 4.1 enumerates security objectives but omits formal definitions for OT.ISOLATION and OT.AUDIT. Without measurable criteria, evaluation against these objectives cannot be performed.',
+      },
+      {
+        id: 'ASE_REQ.2-2',
+        cem: 'The evaluator shall check that each dependency of the SFRs is satisfied.',
+        observation: 'FDP_IFC.1 has an unresolved dependency on FDP_IFF.1. The security requirements rationale (Section 6.2) does not trace or justify this dependency.',
+      },
+    ],
+    passItems: ['ASE_INT.1-1', 'ASE_INT.1-3', 'ASE_OBJ.2-2', 'ASE_OBJ.2-3', 'ASE_SPD.1-1', 'ASE_SPD.1-2', 'ASE_REQ.2-1', 'ASE_REQ.2-3'],
+  },
+  {
+    id: 'r2',
+    docName: 'Demo-ADV_ARC-Security_Architecture-V0.9.docx',
+    docSource: 'archive',
+    version: null,
+    scope: ['ADV_ARC.1'],
+    initiator: 'Phil',
+    startedAt: Date.now() - 86400000,
+    completedAt: Date.now() - 86400000 + 1000 * 60 * 8,
+    status: 'completed',
+    failItems: [
+      {
+        id: 'ADV_ARC.1-3',
+        cem: 'The evaluator shall examine the security architecture description to determine that it describes how the TSF protects itself from tampering by untrusted subjects.',
+        observation: 'Section 3.4 mentions memory isolation at a high level but does not describe the specific mechanism by which the TSF detects or prevents tampering by normal-world processes. A concrete description of the self-protection mechanism is required.',
+      },
+    ],
+    passItems: ['ADV_ARC.1-1', 'ADV_ARC.1-2', 'ADV_ARC.1-4'],
+  },
+];
+
+// ── Mock 文档内容 ───────────────────────────────────────────────────────────
+const DOC_PDF = {
+  r2: '../files/Time%2C%20Clocks%2C%20nad%20the%20Ordering%20of%20Events%20in%20a%20Distributed%20System%20-%20Lamport.pdf',
+};
+
+const DOC_CONTENT = {
+  r1: `
+<h2>1. ST Introduction</h2>
+<h3>1.1 ST Reference</h3>
+<p>This document is the Security Target (ST) for the Trusted Execution Environment (TEE) component of the Demo OS, written in accordance with the Common Criteria for Information Technology Security Evaluation (CC) Version 3.1. The assurance level is EAL4.</p>
+<p>The ST reference identifier is <strong>DEMO-ST-2024-001</strong>, applicable to TEE kernel version 1.0.x.</p>
+
+<h3>1.2 TOE Overview</h3>
+<p>The Target of Evaluation (TOE) is the TEE component running in the ARMv8-A TrustZone Secure World, providing isolated execution, secure storage, and cryptographic services to trusted applications.</p>
+
+<h3>1.3 TOE Description</h3>
+<p>The main functional components of the TOE include:</p>
+<ul>
+  <li><strong>TEE Core Kernel</strong>: Secure scheduling, memory isolation, interrupt management</li>
+  <li><strong>Secure Monitor</strong>: World-switch arbitration between Normal World and Secure World</li>
+  <li><strong>TA Framework</strong>: Loading, authentication, and lifecycle management of trusted applications</li>
+  <li><strong>Secure Storage Driver</strong>: Encrypted persistent storage based on eMMC RPMB partition</li>
+</ul>
+
+<h2>2. Conformance Claims</h2>
+<p>This ST claims conformance to the following standards and protection profiles:</p>
+<table>
+  <tr><th>Standard</th><th>Version</th><th>Conformance</th></tr>
+  <tr><td>CC Part 1</td><td>3.1 Rev 5</td><td>Conformant</td></tr>
+  <tr><td>CC Part 2</td><td>3.1 Rev 5</td><td>Extended</td></tr>
+  <tr><td>CC Part 3</td><td>3.1 Rev 5</td><td>Conformant, EAL4 augmented</td></tr>
+</table>
+
+<h2>3. Security Problem Definition</h2>
+<h3>3.1 Threats</h3>
+<p>The following threats are addressed by the TOE or its operational environment:</p>
+<ul>
+  <li><strong>T.MALICIOUS_NW</strong>: Malicious Normal World software attempts to access Secure World memory or tamper with TA execution</li>
+  <li><strong>T.UNAUTHORIZED_ACCESS</strong>: Unauthorized entities access protected secure storage data</li>
+  <li><strong>T.REPLAY</strong>: Attacker replays historical messages in a secure channel</li>
+</ul>
+
+<h3>3.2 Organizational Security Policies</h3>
+<ul>
+  <li><strong>P.CRYPTO</strong>: All cryptographic operations must use certified algorithm implementations</li>
+  <li><strong>P.AUDIT</strong>: Security-relevant events must be recorded and stored in a tamper-proof manner</li>
+</ul>
+
+<h2>4. Security Objectives</h2>
+<h3>4.1 TOE Security Objectives</h3>
+<table>
+  <tr><th>Objective ID</th><th>Description</th></tr>
+  <tr><td>OT.ISOLATION</td><td>The TEE kernel ensures Normal World cannot directly access Secure World memory regions</td></tr>
+  <tr><td>OT.TA_AUTH</td><td>Only trusted applications with valid signatures and passed integrity checks may be loaded and executed</td></tr>
+  <tr><td>OT.SECURE_STORAGE</td><td>Persistent data is encrypted before storage and integrity-checked upon retrieval</td></tr>
+  <tr><td>OT.AUDIT</td><td>All security-relevant operations generate tamper-proof audit logs</td></tr>
+</table>
+
+<h3>4.2 Security Objectives for the Operational Environment</h3>
+<ul>
+  <li><strong>OE.HARDWARE</strong>: The underlying hardware platform correctly implements TrustZone isolation</li>
+  <li><strong>OE.ADMIN</strong>: System administrators are properly trained and follow secure operational procedures</li>
+</ul>
+
+<h2>5. Extended Component Definition</h2>
+<p>This ST does not define extended security functional requirement components; it uses the standard CC Part 2 component set.</p>
+
+<h2>6. Security Requirements</h2>
+<h3>6.1 TOE Security Functional Requirements (SFR)</h3>
+<table>
+  <tr><th>Requirement ID</th><th>Requirement Name</th></tr>
+  <tr><td>FDP_IFC.1</td><td>Subset Information Flow Control Policy</td></tr>
+  <tr><td>FDP_IFF.1</td><td>Simple Security Attributes</td></tr>
+  <tr><td>FIA_UID.2</td><td>User Identification Before Any Action</td></tr>
+  <tr><td>FPT_TDC.1</td><td>Inter-TSF Basic TSF Data Consistency</td></tr>
+  <tr><td>FAU_GEN.1</td><td>Audit Data Generation</td></tr>
+</table>
+
+<h3>6.2 SFR Dependency Rationale</h3>
+<p>FDP_IFC.1 depends on FDP_IFF.1 to fully define the information flow control rule set. FDP_IFF.1 is declared and satisfies this dependency in Section 6.1.</p>
+
+<h2>7. TOE Summary Specification</h2>
+<p>The TOE implements the above SFRs through the following mechanisms: MPU configuration, secure monitor interrupt routing, TA image signature verification chain, and HMAC-SHA256-based audit log integrity protection.</p>
+`,
+
+  r2: `
+<p>This document is an archive file uploaded by the user. The following is the extracted text content.</p>
+
+<h2>1. Document Overview</h2>
+<p>This document evaluates the security architecture of the TEE component of the Demo OS, focusing on whether TSF domain isolation, non-bypassability, and self-protection mechanisms satisfy ADV_ARC.1 requirements.</p>
+
+<h2>2. TSF Architecture Description</h2>
+<p>The TEE component implements hardware-level isolation between Secure World and Normal World using ARMv8-A TrustZone. The TSF resides in Secure World and intercepts all cross-domain access requests via TZASC and the Secure Monitor (EL3).</p>
+<p>Memory regions are partitioned as follows: Secure World code segment (read-only), Secure World data segment (read-write), TA sandbox memory pool (dynamically allocated), and shared memory region (bidirectionally mapped). All regions are locked by TZASC after boot-time configuration and cannot be modified at runtime.</p>
+
+<h2>3. TSF Self-Protection Mechanisms</h2>
+<p>TSF code and data are configured with secure memory attributes; direct memory access from Normal World is rejected at the bus level and triggers a fault. After initialization, the TEE kernel locks the TZASC configuration registers to prevent subsequent tampering.</p>
+<p>All control flow entering Secure World from Normal World must be routed through the Secure Monitor (EL3 Monitor), which clears sensitive register contents and restores the Secure World context.</p>
+
+<h2>4. Evaluation Findings</h2>
+<p>The document's description of TSF self-protection mechanisms remains at a high-level narrative and lacks specific details on the following:</p>
+<ul>
+  <li>How the TSF detects or prevents tampering from Normal World processes</li>
+  <li>The specific implementation steps and verification method for TZASC register locking</li>
+  <li>The Secure Monitor's handling procedure for abnormal SMC calls</li>
+</ul>
+<p>It is recommended to supplement Section 3.4 with detailed descriptions of the above mechanisms to satisfy the ADV_ARC.1 evaluation requirements.</p>
+`,
+};
+
+// ── 工具 ───────────────────────────────────────────────────────────────────
+function fmtDate(ts) {
+  const d = new Date(ts);
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+// ── 渲染 ───────────────────────────────────────────────────────────────────
+let currentReport = null;
+
+function init() {
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id');
+  currentReport = REPORTS.find(r => r.id === id);
+  if (!currentReport) {
+    document.getElementById('docContent').innerHTML = '<p style="color:rgba(0,0,0,.35)">Report not found.</p>';
+    return;
+  }
+  const r = currentReport;
+
+  // Top bar
+  document.title = `Review Detail — ${r.docName}`;
+  document.getElementById('topDocTitle').textContent = r.docName;
+  if (r.version) {
+    const vb = document.getElementById('topVersion');
+    vb.textContent = r.version;
+    vb.style.display = '';
+  }
+  const sb = document.getElementById('topSource');
+  sb.textContent = r.docSource === 'platform' ? 'Platform' : 'Archive';
+  sb.className = `source-badge ${r.docSource}`;
+
+  // Doc content
+  const docScroll = document.querySelector('.doc-scroll');
+  if (DOC_PDF[r.id]) {
+    docScroll.classList.add('pdf-mode');
+    docScroll.innerHTML = `<iframe class="doc-pdf" src="${DOC_PDF[r.id]}"></iframe>`;
+  } else {
+    document.getElementById('docContent').innerHTML =
+      DOC_CONTENT[r.id] || `<p style="color:rgba(0,0,0,.35)">Document content not available.</p>`;
+  }
+
+  // TOC (platform docs only, HTML content only)
+  if (r.docSource === 'platform' && !DOC_PDF[r.id]) {
+    document.getElementById('tocPanel').classList.add('visible');
+    buildToc();
+  }
+
+  // Report
+  const scopeTags = r.scope.map(s => `<span class="meta-scope-tag">${s}</span>`).join('');
+
+  const failHtml = r.failItems.length === 0
+    ? '<div style="color:rgba(0,0,0,.35);font-size:12px;padding:4px 0">No failed work units</div>'
+    : r.failItems.map(item => `
+        <div class="fail-item">
+          <div class="fail-item-hd">
+            <span class="fail-wu-id">${item.id}</span>
+          </div>
+          <div class="fail-item-body">
+            <div class="field-label">CEM</div>
+            <div class="cem-text">${item.cem}</div>
+            <div class="field-label" style="margin-top:10px">Observation</div>
+            <div class="obs-text">${item.observation}</div>
+          </div>
+        </div>`).join('');
+
+  const passHtml = r.passItems.length === 0
+    ? '<div style="color:rgba(0,0,0,.35);font-size:12px;padding:4px 0">No passed work units</div>'
+    : `<div class="pass-tags">${r.passItems.map(p => `<span class="pass-tag">${p}</span>`).join('')}</div>`;
+
+  document.getElementById('reportContent').innerHTML = `
+    <div class="report-meta">
+      <div class="meta-row"><span class="meta-label">Review Scope</span><div class="meta-scope-tags">${scopeTags}</div></div>
+      <div class="meta-row"><span class="meta-label">Submitted By</span><span class="meta-val">${r.initiator}</span></div>
+      <div class="meta-row"><span class="meta-label">Started At</span><span class="meta-val">${fmtDate(r.startedAt)}</span></div>
+      ${r.completedAt ? `<div class="meta-row"><span class="meta-label">Completed At</span><span class="meta-val">${fmtDate(r.completedAt)}</span></div>` : ''}
+    </div>
+
+    <div class="report-tabs">
+      <button class="tab-btn active" onclick="switchTab('fail')">
+        Failed Work Units <span class="section-count fail">${r.failItems.length}</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('pass')">
+        Passed Work Units <span class="section-count pass">${r.passItems.length}</span>
+      </button>
+    </div>
+    <div class="tab-pane active" id="tabFail">${failHtml}</div>
+    <div class="tab-pane" id="tabPass">${passHtml}</div>
+  `;
+}
+
+// ── TOC ────────────────────────────────────────────────────────────────────
+function buildToc() {
+  const docEl = document.getElementById('docContent');
+  const nav = document.getElementById('tocNav');
+  const headings = docEl.querySelectorAll('h2, h3');
+  if (!headings.length) return;
+
+  // Assign IDs and build nav links
+  nav.innerHTML = Array.from(headings).map((h, i) => {
+    const id = `doc-heading-${i}`;
+    h.id = id;
+    const isH3 = h.tagName === 'H3';
+    return `<a class="toc-item${isH3 ? ' h3' : ''}" href="#${id}" title="${h.textContent}"
+      onclick="scrollToHeading('${id}', event)">${h.textContent}</a>`;
+  }).join('');
+
+  // Scroll spy
+  const scrollEl = document.querySelector('.doc-scroll');
+  scrollEl.addEventListener('scroll', onDocScroll, { passive: true });
+  onDocScroll(); // init highlight
+}
+
+function scrollToHeading(id, e) {
+  e.preventDefault();
+  const el = document.getElementById(id);
+  if (!el) return;
+  const scrollEl = document.querySelector('.doc-scroll');
+  scrollEl.scrollTo({ top: el.offsetTop - 24, behavior: 'smooth' });
+}
+
+function onDocScroll() {
+  const scrollEl = document.querySelector('.doc-scroll');
+  const headings = document.getElementById('docContent').querySelectorAll('h2, h3');
+  const scrollTop = scrollEl.scrollTop + 40;
+  let activeId = headings[0]?.id;
+  headings.forEach(h => { if (h.offsetTop <= scrollTop) activeId = h.id; });
+  document.querySelectorAll('.toc-item').forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === `#${activeId}`);
+  });
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', (tab === 'fail' && i === 0) || (tab === 'pass' && i === 1));
+  });
+  document.getElementById('tabFail').classList.toggle('active', tab === 'fail');
+  document.getElementById('tabPass').classList.toggle('active', tab === 'pass');
+}
+
+// ── 导出 MD ────────────────────────────────────────────────────────────────
+function exportMd() {
+  const r = currentReport;
+  if (!r) return;
+  let md = `# Review Reports\n\n`;
+  md += `| Field | Value |\n|------|------|\n`;
+  md += `| Document | ${r.docName} |\n`;
+  if (r.version) md += `| Version | ${r.version} |\n`;
+  md += `| Source | ${r.docSource === 'platform' ? 'Platform' : 'Archive'} |\n`;
+  md += `| Review Scope | ${r.scope.join(', ')} |\n`;
+  md += `| Submitted By | ${r.initiator} |\n`;
+  md += `| Started At | ${fmtDate(r.startedAt)} |\n`;
+  if (r.completedAt) md += `| Completed At | ${fmtDate(r.completedAt)} |\n`;
+  md += `\n---\n\n`;
+  md += `## Failed Work Units (${r.failItems.length})\n\n`;
+  if (r.failItems.length === 0) {
+    md += `No failed work units。\n\n`;
+  } else {
+    r.failItems.forEach(item => {
+      md += `### ${item.id}\n\n**Work Unit**\n\n${item.cem}\n\n**Observation**\n\n${item.observation}\n\n`;
+    });
+  }
+  md += `---\n\n## Passed Work Units (${r.passItems.length})\n\n`;
+  md += r.passItems.length > 0 ? r.passItems.join(', ') + '\n' : 'No passed work units。\n';
+
+  const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Review Reports_${r.docName}_${fmtDate(r.startedAt).replace(/[: ]/g, '-')}.md`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('MD file exported');
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function toast(msg) {
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(() => { el.classList.add('fade'); setTimeout(() => el.remove(), 300); }, 2000);
+}
+
+init();
+</script>
+</body>
+</html>

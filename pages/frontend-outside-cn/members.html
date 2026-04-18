@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>组织成员 - W-CaaS</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      font-size: 14px;
+      color: rgba(0,0,0,0.85);
+      background: #f0f2f5;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ── 侧边栏 ── */
+    .sidebar {
+      width: 200px;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      border-right: 1px solid #f0f0f0;
+    }
+
+    .sidebar-logo {
+      height: 50px;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .sidebar-logo img { height: 28px; }
+
+    .sidebar-menu { padding: 12px 0 0; flex: 1; overflow-y: auto; }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 20px;
+      cursor: pointer;
+      color: rgba(0,0,0,0.65);
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .menu-item:hover { background: #e6f7ff; color: #1890ff; }
+    .menu-item.active { background: #e6f7ff; color: #1890ff; font-weight: 500; }
+    .menu-item svg { flex-shrink: 0; }
+
+    /* ── 主区域 ── */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    /* ── Header ── */
+    .header {
+      height: 56px;
+      background: #fff;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+    }
+
+    .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+    .breadcrumb-item { color: #999; }
+    .breadcrumb-item.current { color: rgba(0,0,0,0.85); }
+    .breadcrumb-sep { color: #999; }
+
+    .header-right { display: flex; align-items: center; gap: 16px; }
+
+    .bell-wrap { position: relative; cursor: pointer; }
+    .bell-badge {
+      position: absolute;
+      top: -6px; right: -8px;
+      background: #ff4d4f;
+      color: #fff;
+      font-size: 10px;
+      min-width: 16px; height: 16px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 4px; line-height: 1;
+    }
+
+    .user-avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: #1890ff;
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    /* ── 内容区 ── */
+    .content { flex: 1; padding: 24px; }
+
+    /* ── 成员面板 ── */
+    .member-section {
+      background: #fff;
+      border-radius: 8px;
+    }
+
+    /* ── Tabs ── */
+    .tabs-bar {
+      display: flex;
+      border-bottom: 1px solid #f0f0f0;
+      padding: 0 24px;
+    }
+
+    .tab-item {
+      padding: 14px 0;
+      margin-right: 32px;
+      font-size: 14px;
+      color: rgba(0,0,0,0.45);
+      cursor: pointer;
+      position: relative;
+      transition: color 0.2s;
+      white-space: nowrap;
+    }
+    .tab-item:hover { color: #1890ff; }
+    .tab-item.active { color: #1890ff; font-weight: 500; }
+    .tab-item.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px; left: 0; right: 0;
+      height: 2px;
+      background: #1890ff;
+      border-radius: 2px;
+    }
+
+    /* ── 工具栏 ── */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid #d9d9d9;
+      border-radius: 6px;
+      padding: 6px 12px;
+      width: 280px;
+      transition: border-color 0.2s;
+    }
+    .search-box:focus-within { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.2); }
+    .search-box input {
+      border: none; outline: none;
+      font-size: 14px;
+      color: rgba(0,0,0,0.85);
+      width: 100%;
+      background: transparent;
+    }
+    .search-box input::placeholder { color: rgba(0,0,0,0.25); }
+
+    .btn-primary {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #1890ff;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-primary:hover { background: #40a9ff; }
+
+    /* ── 表格 ── */
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead tr {
+      background: #fafafa;
+    }
+
+    th {
+      padding: 12px 24px;
+      font-weight: 500;
+      color: rgba(0,0,0,0.85);
+      font-size: 14px;
+      text-align: left;
+      border-bottom: 1px solid #f0f0f0;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 14px 24px;
+      font-size: 14px;
+      color: rgba(0,0,0,0.85);
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: #fafafa; }
+
+    td.email { color: rgba(0,0,0,0.45); }
+
+    .contact-cell { display: flex; flex-direction: column; gap: 4px; }
+    .contact-item { display: flex; align-items: center; gap: 5px; font-size: 13px; }
+    .contact-item.email-item { color: rgba(0,0,0,0.45); }
+    .contact-icon { flex-shrink: 0; line-height: 0; }
+
+    .phone-cell {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      color: rgba(0,0,0,0.85);
+    }
+    .phone-cell .phone-text {
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.02em;
+    }
+    .phone-cell .phone-eye {
+      color: rgba(0,0,0,0.25);
+      flex-shrink: 0;
+      transition: color 0.15s;
+      line-height: 0;
+    }
+    .phone-cell:hover .phone-eye { color: #1890ff; }
+    .phone-cell.revealed .phone-text { color: rgba(0,0,0,0.85); }
+    .phone-cell.revealed .phone-eye { color: #1890ff; }
+
+    .role-tag {
+      display: inline-block;
+      font-size: 12px;
+      padding: 1px 8px;
+      border-radius: 4px;
+    }
+    .role-admin { background: #e6f7ff; color: #1890ff; border: 1px solid #91d5ff; }
+    .role-normal { background: #f5f5f5; color: rgba(0,0,0,0.45); border: 1px solid #d9d9d9; }
+
+    .op-cell { display: flex; align-items: center; gap: 0; }
+    .btn-link {
+      background: none;
+      border: none;
+      color: #1890ff;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 0 8px;
+      transition: color 0.2s;
+    }
+    .btn-link:hover { color: #40a9ff; }
+    .btn-link.danger { color: #ff4d4f; }
+    .btn-link.danger:hover { color: #ff7875; }
+    .op-divider {
+      width: 1px;
+      height: 14px;
+      background: #f0f0f0;
+    }
+
+    /* ── 分页 ── */
+    .pagination {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 16px 24px;
+      border-top: 1px solid #f0f0f0;
+    }
+
+    .pagination-info {
+      font-size: 13px;
+      color: rgba(0,0,0,0.45);
+      margin-right: 8px;
+    }
+
+    .page-btn {
+      width: 32px; height: 32px;
+      border: 1px solid #d9d9d9;
+      border-radius: 6px;
+      background: #fff;
+      color: rgba(0,0,0,0.65);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .page-btn:hover:not(:disabled) { border-color: #1890ff; color: #1890ff; }
+    .page-btn:disabled { cursor: not-allowed; color: rgba(0,0,0,0.25); background: #f5f5f5; }
+    .page-btn.active { background: #1890ff; border-color: #1890ff; color: #fff; }
+
+    /* ── 空状态 ── */
+    .empty {
+      text-align: center;
+      padding: 60px 0;
+      color: rgba(0,0,0,0.25);
+      font-size: 14px;
+    }
+
+    /* ── Modal ── */
+    .modal-mask {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-mask.open { display: flex; }
+
+    .modal-box {
+      background: #fff;
+      border-radius: 8px;
+      width: 520px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+      position: relative;
+    }
+
+    .modal-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 16px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-close {
+      cursor: pointer;
+      color: rgba(0,0,0,0.45);
+      font-size: 16px;
+      line-height: 1;
+      padding: 4px;
+      border-radius: 4px;
+      transition: color 0.2s;
+    }
+    .modal-close:hover { color: rgba(0,0,0,0.85); }
+
+    .modal-body { padding: 24px; }
+
+    /* modal tabs */
+    .modal-tabs { display: flex; gap: 24px; border-bottom: 1px solid #f0f0f0; margin-bottom: 20px; }
+    .modal-tab {
+      padding: 8px 0;
+      font-size: 14px;
+      color: rgba(0,0,0,0.45);
+      cursor: pointer;
+      position: relative;
+      transition: color 0.2s;
+    }
+    .modal-tab:hover { color: #1890ff; }
+    .modal-tab.active { color: #1890ff; font-weight: 500; }
+    .modal-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px; left: 0; right: 0;
+      height: 2px;
+      background: #1890ff;
+      border-radius: 2px;
+    }
+
+    /* 链接邀请 */
+    .invite-tip {
+      font-size: 13px;
+      color: rgba(0,0,0,0.65);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    .invite-tip strong { font-weight: 500; color: rgba(0,0,0,0.85); }
+
+    .invite-link-box {
+      display: flex;
+      align-items: stretch;
+      border: 1px solid #d9d9d9;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .invite-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+    .invite-expires { color: rgba(0,0,0,0.45); }
+    .invite-expires .days-left { color: rgba(0,0,0,0.65); font-weight: 500; }
+    .invite-expires .days-warn { color: #fa8c16; font-weight: 500; }
+    .btn-reset {
+      background: none;
+      border: none;
+      color: rgba(0,0,0,0.45);
+      font-size: 13px;
+      cursor: pointer;
+      padding: 0;
+      transition: color 0.15s;
+    }
+    .btn-reset:hover { color: #ff4d4f; }
+    .link-text {
+      flex: 1;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: rgba(0,0,0,0.65);
+      line-height: 1.6;
+      background: #fafafa;
+      word-break: break-all;
+    }
+    .copy-btn {
+      flex-shrink: 0;
+      width: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      border-left: 1px solid #d9d9d9;
+      cursor: pointer;
+      color: rgba(0,0,0,0.45);
+      transition: color 0.2s, background 0.2s;
+    }
+    .copy-btn:hover { color: #1890ff; background: #f0f7ff; }
+    .copy-btn.copied { color: #52c41a; }
+
+    /* 搜索账号 */
+    .search-row {
+      display: flex;
+      gap: 8px;
+    }
+    .search-row .search-box { flex: 1; width: auto; }
+    .btn-search {
+      background: #1890ff;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 0 20px;
+      font-size: 14px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+    .btn-search:hover { background: #40a9ff; }
+
+    .search-result { margin-top: 16px; }
+    .result-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .result-item:last-child { border-bottom: none; }
+    .result-info { display: flex; flex-direction: column; gap: 2px; }
+    .result-name { font-size: 14px; color: rgba(0,0,0,0.85); }
+    .result-phone { font-size: 12px; color: rgba(0,0,0,0.45); }
+    .btn-add-member {
+      background: none;
+      border: 1px solid #1890ff;
+      color: #1890ff;
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-add-member:hover { background: #1890ff; color: #fff; }
+    .btn-add-member:disabled { border-color: #d9d9d9; color: rgba(0,0,0,0.25); cursor: not-allowed; }
+
+    .result-empty {
+      text-align: center;
+      padding: 32px 0;
+      color: rgba(0,0,0,0.25);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 侧边栏 -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <img src="https://wcaas.wonsec.com/wcaas/static/png/logo_small-86cf36e4.png" alt="logo" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <span style="display:none;font-weight:700;color:#1890ff;font-size:16px;">W-CaaS</span>
+    </div>
+    <nav class="sidebar-menu">
+      <div class="menu-item" data-path="/proList" onclick="location.href='projects.html'">
+        <svg width="16" height="16" viewBox="0 0 1024 1024" fill="currentColor"><path d="M928 160H96c-17.7 0-32 14.3-32 32v640c0 17.7 14.3 32 32 32h832c17.7 0 32-14.3 32-32V192c0-17.7-14.3-32-32-32zM338 304h348c8.8 0 16 7.2 16 16v48c0 8.8-7.2 16-16 16H338c-8.8 0-16-7.2-16-16v-48c0-8.8 7.2-16 16-16zm0 160h348c8.8 0 16 7.2 16 16v48c0 8.8-7.2 16-16 16H338c-8.8 0-16-7.2-16-16v-48c0-8.8 7.2-16 16-16zm0 160h220c8.8 0 16 7.2 16 16v48c0 8.8-7.2 16-16 16H338c-8.8 0-16-7.2-16-16v-48c0-8.8 7.2-16 16-16zM256 304a48 48 0 100 96 48 48 0 000-96zm0 160a48 48 0 100 96 48 48 0 000-96zm0 160a48 48 0 100 96 48 48 0 000-96z"/></svg>
+        <span>我的项目</span>
+      </div>
+      <div class="menu-item active" data-path="/members">
+        <svg width="16" height="16" viewBox="0 0 1024 1024" fill="currentColor"><path d="M824 708H200c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h624c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0-192H200c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h624c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0-192H200c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h624c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8z"/></svg>
+        <span>组织成员</span>
+      </div>
+      <div class="menu-item" data-path="/manage" onclick="location.href='project-manage.html'">
+        <svg width="16" height="16" viewBox="0 0 1024 1024" fill="currentColor"><path d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm0 820c-205.4 0-372-166.6-372-372s166.6-372 372-372 372 166.6 372 372-166.6 372-372 372zm5.6-532.7c53 0 96.1 43.1 96.1 96.1 0 53-43.1 96.1-96.1 96.1-53 0-96.1-43.1-96.1-96.1 0-53 43.2-96.1 96.1-96.1m0-72c-92.9 0-168.1 75.3-168.1 168.1 0 92.9 75.3 168.1 168.1 168.1 92.9 0 168.1-75.3 168.1-168.1 0-92.9-75.2-168.1-168.1-168.1zm-.6 394.1c-105.6 0-196.5 50-254 127.1-9.2 12.3-6.6 29.8 5.7 39 12.3 9.2 29.8 6.6 39-5.7C352 758.5 429.5 716 517 716s165 42.5 210.2 107.8c9.2 12.3 26.7 14.9 39 5.7 12.3-9.2 14.9-26.7 5.7-39C714.5 713.4 623.6 673.4 517 673.4z"/></svg>
+        <span>项目管理</span>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- 主区域 -->
+  <div class="main">
+    <!-- Header -->
+    <header class="header">
+      <nav class="breadcrumb">
+        <span class="breadcrumb-item">认证平台</span>
+        <span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-item current">组织成员</span>
+      </nav>
+      <div class="header-right">
+        <div class="bell-wrap" title="通知">
+          <svg width="20" height="20" viewBox="64 64 896 896" fill="rgba(0,0,0,0.65)"><path d="M816 768h-24V428c0-141.1-104.3-257.7-240-277.1V112c0-22.1-17.9-40-40-40s-40 17.9-40 40v38.9c-135.7 19.4-240 136-240 277.1v340h-24c-17.7 0-32 14.3-32 32v32c0 4.4 3.6 8 8 8h216c0 61.8 50.2 112 112 112s112-50.2 112-112h216c4.4 0 8-3.6 8-8v-32c0-17.7-14.3-32-32-32zm-304 112c-26.5 0-48-21.5-48-48h96c0 26.5-21.5 48-48 48z"/></svg>
+          <span class="bell-badge">29</span>
+        </div>
+        <div class="user-avatar" title="章喆">章</div>
+      </div>
+    </header>
+
+    <!-- 内容 -->
+    <div class="content">
+      <div class="member-section">
+
+        <!-- Tabs -->
+        <div class="tabs-bar">
+          <div class="tab-item active" id="tabList" onclick="switchTab('list')">成员名单 · 33</div>
+          <div class="tab-item" id="tabApply" onclick="switchTab('apply')">申请中 · 0</div>
+        </div>
+
+        <!-- 成员名单 -->
+        <div id="panelList">
+          <div class="toolbar">
+            <div class="search-box">
+              <svg width="14" height="14" viewBox="64 64 896 896" fill="rgba(0,0,0,0.25)"><path d="M909.6 854.5L649.9 594.8C690.2 542.7 712 479 712 412c0-80.2-31.3-155.4-87.9-212.1-56.6-56.7-132-87.9-212.1-87.9s-155.5 31.3-212.1 87.9C143.2 256.5 112 331.8 112 412c0 80.1 31.3 155.5 87.9 212.1C256.5 680.8 331.8 712 412 712c67 0 130.6-21.8 182.7-62l259.7 259.6a8.2 8.2 0 0011.6 0l43.6-43.5a8.2 8.2 0 000-11.6zM570.4 570.4C528 612.7 471.8 636 412 636s-116-23.3-158.4-65.6C211.3 528 188 471.8 188 412s23.3-116.1 65.6-158.4C296 211.3 352.2 188 412 188s116.1 23.2 158.4 65.6S636 352.2 636 412s-23.3 116.1-65.6 158.4z"/></svg>
+              <input type="text" id="searchInput" placeholder="输入称呼、手机号或邮箱搜索" oninput="applySearch()" />
+            </div>
+            <button class="btn-primary" onclick="openModal()">
+              <svg width="14" height="14" viewBox="64 64 896 896" fill="currentColor"><path d="M482 152h60q8 0 8 8v704q0 8-8 8h-60q-8 0-8-8V160q0-8 8-8z"/><path d="M192 474h672q8 0 8 8v60q0 8-8 8H192q-8 0-8-8v-60q0-8 8-8z"/></svg>
+              添加成员
+            </button>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>称呼</th>
+                  <th>联系方式</th>
+                  <th>权限</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="memberBody"></tbody>
+            </table>
+          </div>
+
+          <div class="pagination" id="pagination"></div>
+        </div>
+
+        <!-- 申请中（空） -->
+        <div id="panelApply" style="display:none;">
+          <div class="empty">暂无申请</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const ALL_MEMBERS = [
+      { name: '陈建明', phone: '18657568833', email: '-', role: '管理员' },
+      { name: '陈永浪', phone: '13458472584', email: '-', role: '管理员' },
+      { name: '崔刚',   phone: '15662580331', email: '-', role: '管理员' },
+      { name: '邓文鑫', phone: '18870536367', email: '18870536367@163.com', role: '普通' },
+      { name: '贺泉贵', phone: '17701133935', email: '-', role: '普通' },
+      { name: '胡馨匀', phone: '17858299027', email: '-', role: '管理员' },
+      { name: '金泽宇', phone: '19858183911', email: '-', role: '管理员' },
+      { name: '李蒙',   phone: '15929878681', email: '-', role: '管理员' },
+      { name: '李楠',   phone: '13588375104', email: '-', role: '管理员' },
+      { name: '李周梁', phone: '13656851810', email: '-', role: '管理员' },
+      { name: '梁通',   phone: '17829179046', email: '-', role: '管理员' },
+      { name: '刘春亮', phone: '13325770793', email: '-', role: '普通' },
+      { name: '刘春生', phone: '17870151554', email: '-', role: '管理员' },
+      { name: '刘威',   phone: '15827599297', email: '-', role: '管理员' },
+      { name: '马立成', phone: '13666679673', email: 'malc@wonsec.com', role: '管理员' },
+      { name: '毛志远', phone: '17757581480', email: '-', role: '管理员' },
+      { name: '孟增学', phone: '17609437561', email: '-', role: '管理员' },
+      { name: '牛传军', phone: '18852911612', email: '-', role: '管理员' },
+      { name: '孙青松', phone: '13735449066', email: 'sunqs@wonsec.com', role: '管理员' },
+      { name: '王之卓', phone: '17826807506', email: '-', role: '管理员' },
+      { name: '夏至',   phone: '18956414701', email: '-', role: '管理员' },
+      { name: '谢文飞', phone: '15617727291', email: '-', role: '管理员' },
+      { name: '谢欣',   phone: '18720784525', email: '-', role: '管理员' },
+      { name: '徐海通', phone: '18879223622', email: '-', role: '管理员' },
+      { name: '许浩',   phone: '15172369318', email: '-', role: '管理员' },
+      { name: '姚历智', phone: '15868191060', email: '-', role: '管理员' },
+      { name: '虞蝶',   phone: '13346029429', email: '-', role: '普通' },
+      { name: '张斌',   phone: '15757593255', email: '-', role: '管理员' },
+      { name: '张涛',   phone: '17370836830', email: '-', role: '管理员' },
+      { name: '章喆',   phone: '15510115737', email: 'zhangz@wonsec.com', role: '管理员' },
+      { name: '赵永望',      phone: '18966060006', email: '-',                    role: '管理员' },
+      { name: 'jiangjj',    phone: '18758651021', email: 'jiangjj@wonsec.com',   role: '普通' },
+      { name: 'Scarlett',   phone: '15385402760', email: '1910035062@qq.com',    role: '普通' },
+      { name: 'Derenc Frank', phone: '-',          email: 'derenc.frank@gmail.com', role: '普通' },
+      { name: 'Ethen Claude', phone: '+4917612345678', email: '-',               role: '普通' },
+    ];
+
+    const PAGE_SIZE = 20;
+    let currentPage = 1;
+    let filteredMembers = [...ALL_MEMBERS];
+
+    function esc(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function maskPhone(phone) {
+      // 保留国家码（+xx 前缀）和末4位，中间全部掩码
+      const KEEP_TAIL = 4;
+      if (phone.startsWith('+')) {
+        // 国际号码：找到国家码结束位置（+后跟1-3位数字）
+        const match = phone.match(/^(\+\d{1,3})/);
+        const prefix = match ? match[1] : '+';
+        const rest = phone.slice(prefix.length);
+        const tail = rest.slice(-KEEP_TAIL);
+        const masked = '*'.repeat(Math.max(rest.length - KEEP_TAIL, 1));
+        return `${prefix} ${masked}${tail}`;
+      } else {
+        // 国内号码：保留前3位 + 末4位
+        const tail = phone.slice(-KEEP_TAIL);
+        const masked = '*'.repeat(Math.max(phone.length - 3 - KEEP_TAIL, 1));
+        return `${phone.slice(0, 3)} ${masked} ${tail}`;
+      }
+    }
+
+    const PHONE_SVG = `<svg width="12" height="12" viewBox="64 64 896 896" fill="currentColor"><path d="M885.6 230.2L779.1 123.8a80.83 80.83 0 00-57.3-23.8c-21.7 0-42.1 8.5-57.4 23.8L549.8 238.4a80.83 80.83 0 00-23.8 57.3c0 21.7 8.5 42.1 23.8 57.4l83.8 83.8A393.82 393.82 0 01553 553C521 585 484.4 613.1 443.9 636L360 552.2a80.83 80.83 0 00-57.3-23.8c-21.7 0-42.1 8.5-57.4 23.8L139.9 665.6a80.83 80.83 0 00-23.8 57.4c0 21.7 8.5 42.1 23.8 57.3l106.3 106.3c24.4 24.4 58.1 38.4 92.7 38.4 7.3 0 14.3-.6 22.2-2 77.3-14.6 158.1-56.3 235.1-120.8 74.9-63.1 129.7-133.3 165.4-208.3 11.6-24.4 27.4-76.3-6.3-110z"/></svg>`;
+    const EMAIL_SVG = `<svg width="12" height="12" viewBox="64 64 896 896" fill="currentColor"><path d="M928 160H96c-17.7 0-32 14.3-32 32v640c0 17.7 14.3 32 32 32h832c17.7 0 32-14.3 32-32V192c0-17.7-14.3-32-32-32zm-80.8 108.9L512 550.2 176.8 268.9A7.95 7.95 0 01172 262v-18c0-4.4 3.6-8 8-8h664c4.4 0 8 3.6 8 8v18c0 2.6-1.2 5-3.8 6.9z"/></svg>`;
+
+    function renderContact(m) {
+      const hasPhone = m.phone && m.phone !== '-';
+      const hasEmail = m.email && m.email !== '-';
+      let items = '';
+      if (hasPhone) {
+        items += `<div class="contact-item">
+          <span class="contact-icon" style="color:rgba(0,0,0,0.35)">${PHONE_SVG}</span>
+          <span class="phone-cell" data-phone="${esc(m.phone)}" onclick="togglePhone(this)" title="点击查看完整号码">
+            <span class="phone-text">${maskPhone(m.phone)}</span>
+            <span class="phone-eye">${EYE_CLOSED_SVG}</span>
+          </span>
+        </div>`;
+      }
+      if (hasEmail) {
+        items += `<div class="contact-item email-item">
+          <span class="contact-icon">${EMAIL_SVG}</span>
+          <span>${esc(m.email)}</span>
+        </div>`;
+      }
+      return `<div class="contact-cell">${items || '-'}</div>`;
+    }
+
+    function togglePhone(el) {
+      const isRevealed = el.classList.contains('revealed');
+      const phone = el.dataset.phone;
+      const textEl = el.querySelector('.phone-text');
+      const eyeEl = el.querySelector('.phone-eye');
+
+      if (isRevealed) {
+        el.classList.remove('revealed');
+        textEl.textContent = maskPhone(phone);
+        eyeEl.innerHTML = EYE_CLOSED_SVG;
+        el.title = '点击查看完整号码';
+      } else {
+        el.classList.add('revealed');
+        textEl.textContent = phone;
+        eyeEl.innerHTML = EYE_OPEN_SVG;
+        el.title = '点击隐藏';
+      }
+    }
+
+    const EYE_CLOSED_SVG = `<svg width="13" height="13" viewBox="64 64 896 896" fill="currentColor"><path d="M942.2 486.2C847.4 286.5 704.1 186 512 186c-192.2 0-335.4 100.5-430.2 300.3a60.3 60.3 0 000 51.5C176.6 737.5 319.9 838 512 838c192.2 0 335.4-100.5 430.2-300.3 7.7-16.2 7.7-35 0-51.5zM512 766c-161.3 0-279.4-81.8-362.7-254C232.6 339.8 350.7 258 512 258c161.3 0 279.4 81.8 362.7 254C791.4 684.2 673.3 766 512 766zm-4-430c-97.2 0-176 78.8-176 176s78.8 176 176 176 176-78.8 176-176-78.8-176-176-176zm0 288c-61.9 0-112-50.1-112-112s50.1-112 112-112 112 50.1 112 112-50.1 112-112 112z"/></svg>`;
+    const EYE_OPEN_SVG = `<svg width="13" height="13" viewBox="64 64 896 896" fill="currentColor"><path d="M508 624a112 112 0 00112-112c0-3.28-.15-6.53-.43-9.74L498.26 623.57c3.21.28 6.45.43 9.74.43zm370.72-458.44L836 122.88a8 8 0 00-11.31 0L715.37 232.23Q624.91 186 512 186q-288.3 0-430.2 300.3a60.3 60.3 0 000 51.5q56.7 119.43 136.55 191.45L112.56 835a8 8 0 000 11.31L155.25 889a8 8 0 0011.31 0l712.16-712.12a8 8 0 000-11.32zM332 512a176 176 0 01258.88-155.28l-48.62 48.62a112.08 112.08 0 00-140.92 140.92l-48.62 48.62A175.09 175.09 0 01332 512z"/><path d="M942.2 486.2Q889.47 375 816.4 304L672.37 448a176.09 176.09 0 01-164.46 164.46L365.57 754.36Q435.37 772 512 772q288.3 0 430.2-300.3a60.29 60.29 0 000-51.5z"/></svg>`;
+
+    function renderTable() {
+      const start = (currentPage - 1) * PAGE_SIZE;
+      const pageData = filteredMembers.slice(start, start + PAGE_SIZE);
+      const tbody = document.getElementById('memberBody');
+
+      if (pageData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:48px 0;color:rgba(0,0,0,0.25);">暂无成员</td></tr>`;
+      } else {
+        tbody.innerHTML = pageData.map(m => {
+          const isAdmin = m.role === '管理员';
+          const ops = isAdmin
+            ? `<button class="btn-link" onclick="alert('移除管理员：${esc(m.name)}')" >移除管理员</button>
+               <span class="op-divider"></span>
+               <button class="btn-link danger" onclick="alert('移出组织：${esc(m.name)}')">移出组织</button>`
+            : `<button class="btn-link" onclick="alert('设置管理员：${esc(m.name)}')">设置管理员</button>
+               <span class="op-divider"></span>
+               <button class="btn-link danger" onclick="alert('移出组织：${esc(m.name)}')">移出组织</button>`;
+          return `
+            <tr>
+              <td>${esc(m.name)}</td>
+              <td>${renderContact(m)}</td>
+              <td><span class="role-tag ${isAdmin ? 'role-admin' : 'role-normal'}">${esc(m.role)}</span></td>
+              <td><div class="op-cell">${ops}</div></td>
+            </tr>`;
+        }).join('');
+      }
+
+      renderPagination();
+    }
+
+    function renderPagination() {
+      const total = filteredMembers.length;
+      const totalPages = Math.ceil(total / PAGE_SIZE);
+      const pg = document.getElementById('pagination');
+
+      let html = `<span class="pagination-info">共 ${total} 个成员</span>`;
+      html += `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="goPage(${currentPage - 1})">‹</button>`;
+      for (let i = 1; i <= totalPages; i++) {
+        html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goPage(${i})">${i}</button>`;
+      }
+      html += `<button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="goPage(${currentPage + 1})">›</button>`;
+      pg.innerHTML = html;
+    }
+
+    function goPage(p) {
+      const totalPages = Math.ceil(filteredMembers.length / PAGE_SIZE);
+      if (p < 1 || p > totalPages) return;
+      currentPage = p;
+      renderTable();
+    }
+
+    function applySearch() {
+      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      filteredMembers = ALL_MEMBERS.filter(m =>
+        m.name.toLowerCase().includes(q) ||
+        m.phone.includes(q) ||
+        m.email.toLowerCase().includes(q)
+      );
+      currentPage = 1;
+      renderTable();
+    }
+
+    function switchTab(tab) {
+      document.getElementById('tabList').classList.toggle('active', tab === 'list');
+      document.getElementById('tabApply').classList.toggle('active', tab === 'apply');
+      document.getElementById('panelList').style.display = tab === 'list' ? 'block' : 'none';
+      document.getElementById('panelApply').style.display = tab === 'apply' ? 'block' : 'none';
+    }
+
+    renderTable();
+
+    // ── Modal ────────────────────────────────────────────
+    // ── 邀请链接 ──────────────────────────────────────────
+    // mock：模拟后端返回的 token 数据（懒生成 + 3天阈值自动续期）
+    const INVITE_VALIDITY_DAYS = 7;
+    const RENEW_THRESHOLD_DAYS = 3;
+
+    function generateToken() {
+      return Math.random().toString(36).slice(2, 11);
+    }
+
+    function createInviteData() {
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + INVITE_VALIDITY_DAYS);
+      return { token: generateToken(), expiresAt };
+    }
+
+    // mock 当前有效的 invite（模拟后端存储）
+    let inviteData = createInviteData();
+
+    function getOrRenewInvite() {
+      const now = new Date();
+      const diffDays = (inviteData.expiresAt - now) / (1000 * 60 * 60 * 24);
+      if (diffDays < RENEW_THRESHOLD_DAYS) {
+        inviteData = createInviteData(); // 自动续期
+      }
+      return inviteData;
+    }
+
+    function renderInvitePanel() {
+      const invite = getOrRenewInvite();
+      const url = `https://wcaas.wonsec.com/wcaas/#/register?token=${invite.token}`;
+      const text = `章喆 邀请你加入【浙江望安科技有限公司】，访问链接注册申请加入组织 ${url}`;
+
+      document.getElementById('inviteLinkText').textContent = text;
+
+      const now = new Date();
+      const diffDays = Math.ceil((invite.expiresAt - now) / (1000 * 60 * 60 * 24));
+      const dateStr = invite.expiresAt.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' });
+      const daysClass = diffDays <= RENEW_THRESHOLD_DAYS ? 'days-warn' : 'days-left';
+      document.getElementById('inviteExpires').innerHTML =
+        `有效期至 ${dateStr}（剩余 <span class="${daysClass}">${diffDays} 天</span>）`;
+    }
+
+    function resetInviteLink() {
+      const btn = document.getElementById('resetBtn');
+      // 二次确认：按钮变成确认态
+      if (btn.dataset.confirming === '1') {
+        inviteData = createInviteData();
+        renderInvitePanel();
+        btn.textContent = '重置链接';
+        btn.dataset.confirming = '0';
+        btn.style.color = '';
+      } else {
+        btn.textContent = '确认重置？';
+        btn.dataset.confirming = '1';
+        btn.style.color = '#ff4d4f';
+        // 3秒后自动取消确认态
+        setTimeout(() => {
+          if (btn.dataset.confirming === '1') {
+            btn.textContent = '重置链接';
+            btn.dataset.confirming = '0';
+            btn.style.color = '';
+          }
+        }, 3000);
+      }
+    }
+
+    function openModal() {
+      document.getElementById('addMemberModal').classList.add('open');
+      switchModalTab('link');
+      renderInvitePanel();
+      document.getElementById('modalSearchInput').value = '';
+      document.getElementById('searchResult').innerHTML = '';
+    }
+
+    function closeModal() {
+      document.getElementById('addMemberModal').classList.remove('open');
+    }
+
+    // 点遮罩关闭
+    document.getElementById('addMemberModal').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+
+    function switchModalTab(tab) {
+      document.getElementById('mtabLink').classList.toggle('active', tab === 'link');
+      document.getElementById('mtabSearch').classList.toggle('active', tab === 'search');
+      document.getElementById('mpanelLink').style.display = tab === 'link' ? 'block' : 'none';
+      document.getElementById('mpanelSearch').style.display = tab === 'search' ? 'block' : 'none';
+    }
+
+    function copyInviteLink() {
+      const text = document.getElementById('inviteLinkText').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copyBtn');
+        btn.classList.add('copied');
+        btn.title = '已复制';
+        btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          btn.title = '复制';
+          btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>';
+        }, 2000);
+      });
+    }
+
+    // mock 搜索：在已有成员中查找（模拟"系统内账号搜索"）
+    function doModalSearch() {
+      const q = document.getElementById('modalSearchInput').value.trim();
+      const resultEl = document.getElementById('searchResult');
+      if (!q) { resultEl.innerHTML = ''; return; }
+
+      const hits = ALL_MEMBERS.filter(m =>
+        m.phone.includes(q) || m.email.toLowerCase().includes(q.toLowerCase())
+      );
+
+      if (hits.length === 0) {
+        resultEl.innerHTML = '<div class="result-empty">未找到匹配的账号</div>';
+      } else {
+        resultEl.innerHTML = hits.map(m => `
+          <div class="result-item">
+            <div class="result-info">
+              <span class="result-name">${esc(m.name)}</span>
+              <span class="result-phone">${maskPhone(m.phone)}${m.email !== '-' ? ' · ' + esc(m.email) : ''}</span>
+            </div>
+            <button class="btn-add-member" disabled title="已在组织中">已加入</button>
+          </div>
+        `).join('');
+      }
+    }
+
+    document.getElementById('modalSearchInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doModalSearch();
+    });
+  </script>
+
+  <!-- 添加成员 Modal -->
+  <div class="modal-mask" id="addMemberModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span>添加成员</span>
+        <span class="modal-close" onclick="closeModal()">✕</span>
+      </div>
+      <div class="modal-body">
+        <div class="modal-tabs">
+          <div class="modal-tab active" id="mtabLink" onclick="switchModalTab('link')">链接邀请</div>
+          <div class="modal-tab" id="mtabSearch" onclick="switchModalTab('search')">搜索账号</div>
+        </div>
+
+        <!-- 链接邀请 -->
+        <div id="mpanelLink">
+          <p class="invite-tip">
+            分享下方链接给外部用户，用户通过链接注册后，<strong>【申请中】</strong>列表会收到消息推送
+          </p>
+          <div class="invite-link-box">
+            <div class="link-text" id="inviteLinkText"></div>
+            <div class="copy-btn" id="copyBtn" onclick="copyInviteLink()" title="复制">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+            </div>
+          </div>
+          <div class="invite-meta">
+            <span class="invite-expires" id="inviteExpires"></span>
+            <button class="btn-reset" id="resetBtn" onclick="resetInviteLink()">重置链接</button>
+          </div>
+        </div>
+
+        <!-- 搜索账号 -->
+        <div id="mpanelSearch" style="display:none;">
+          <div class="search-row">
+            <div class="search-box">
+              <svg width="14" height="14" viewBox="64 64 896 896" fill="rgba(0,0,0,0.25)"><path d="M909.6 854.5L649.9 594.8C690.2 542.7 712 479 712 412c0-80.2-31.3-155.4-87.9-212.1-56.6-56.7-132-87.9-212.1-87.9s-155.5 31.3-212.1 87.9C143.2 256.5 112 331.8 112 412c0 80.1 31.3 155.5 87.9 212.1C256.5 680.8 331.8 712 412 712c67 0 130.6-21.8 182.7-62l259.7 259.6a8.2 8.2 0 0011.6 0l43.6-43.5a8.2 8.2 0 000-11.6zM570.4 570.4C528 612.7 471.8 636 412 636s-116-23.3-158.4-65.6C211.3 528 188 471.8 188 412s23.3-116.1 65.6-158.4C296 211.3 352.2 188 412 188s116.1 23.2 158.4 65.6S636 352.2 636 412s-23.3 116.1-65.6 158.4z"/></svg>
+              <input type="text" id="modalSearchInput" placeholder="通过手机号或邮箱搜索组织成员" />
+            </div>
+            <button class="btn-search" onclick="doModalSearch()">搜 索</button>
+          </div>
+          <div class="search-result" id="searchResult"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

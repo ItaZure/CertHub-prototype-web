@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>Review Reports - CertHub</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      font-size: 14px; color: rgba(0,0,0,0.85);
+      background: #f5fafc; display: flex; min-height: 100vh;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      position: fixed; left: 0; top: 0; bottom: 0; width: 240px;
+      background: #fff; display: flex; flex-direction: column;
+      border-right: 1px solid #f0f0f0; z-index: 100;
+    }
+    .sidebar-back {
+      height: 48px; display: flex; align-items: center; gap: 8px;
+      padding: 0 16px 0 12px; font-size: 15px; font-weight: 500;
+      color: rgba(0,0,0,0.85); cursor: pointer;
+      border-bottom: 1px solid #f0f0f0; transition: color 0.2s; text-decoration: none;
+    }
+    .sidebar-back:hover { color: #1890ff; }
+    .sidebar-back svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .sidebar-menu { flex: 1; padding: 8px 0; overflow-y: auto; }
+    .menu-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 0 16px 0 24px; height: 40px;
+      cursor: pointer; color: rgba(0,0,0,0.65); font-size: 14px;
+      transition: all 0.2s; text-decoration: none;
+    }
+    .menu-item:hover { background: #e6f7ff; color: #1890ff; }
+    .menu-item.active { background: #e6f7ff; color: #1890ff; font-weight: 500; }
+    .menu-item svg { flex-shrink: 0; width: 16px; height: 16px; }
+
+    /* ── Top bar ── */
+    .top-bar {
+      position: fixed; top: 0; left: 240px; right: 0; height: 50px;
+      background: #fff; border-bottom: 1px solid #f0f0f0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; z-index: 99;
+    }
+    .project-title { display: flex; align-items: center; gap: 10px; }
+    .project-name { font-size: 15px; font-weight: 600; color: rgba(0,0,0,0.85); }
+    .eal-tag {
+      display: inline-flex; align-items: center; padding: 1px 8px;
+      font-size: 12px; border-radius: 2px; font-weight: 500;
+      border: 1px solid #91d5ff; color: #1890ff; background: #e6f7ff;
+    }
+    .ant-tag {
+      display: inline-flex; align-items: center;
+      padding: 1px 7px; font-size: 12px; border-radius: 2px;
+      border: 1px solid #d9d9d9; color: rgba(0,0,0,0.65);
+      background: #fff; line-height: 20px;
+    }
+    .top-bar-right { display: flex; align-items: center; gap: 16px; }
+    .bell-wrap { position: relative; cursor: pointer; }
+    .bell-badge {
+      position: absolute; top: -5px; right: -8px;
+      background: #ff4d4f; color: #fff; font-size: 10px;
+      min-width: 16px; height: 16px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; padding: 0 3px;
+    }
+    .user-avatar {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: #1890ff; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 500; cursor: pointer;
+    }
+
+    /* ── Main ── */
+    .main { margin-left: 240px; flex: 1; display: flex; flex-direction: column; }
+    .page-content { margin-top: 50px; padding: 20px 16px 24px 4px; }
+
+    /* ── Card ── */
+    .list-card {
+      background: #fff; border-radius: 10px; padding: 0 24px;
+    }
+    .list-toolbar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 0; border-bottom: 1px solid #f0f0f0;
+    }
+    .list-title { font-size: 15px; font-weight: 600; color: rgba(0,0,0,.85); }
+
+    /* ── Table ── */
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      padding: 12px 16px; text-align: left; font-size: 13px;
+      font-weight: 500; color: rgba(0,0,0,.65);
+      background: #fff; border-bottom: 1px solid #f0f0f0; white-space: nowrap;
+    }
+    tbody tr { border-bottom: 1px solid #f0f0f0; transition: background .15s; }
+    tbody tr:hover { background: #fafafa; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody td { padding: 13px 16px; font-size: 13px; color: rgba(0,0,0,.85); vertical-align: middle; }
+
+    .doc-name { color: rgba(0,0,0,.85); max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+    .source-badge {
+      display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 3px;
+      font-size: 11px; font-weight: 500;
+    }
+    .source-badge.platform { background: #e6f7ff; color: #1890ff; border: 1px solid #91d5ff; }
+    .source-badge.archive  { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+
+    .ver-text { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 12px; color: rgba(0,0,0,.65); }
+    .scope-text { font-size: 12px; color: rgba(0,0,0,.55); max-width: 160px; }
+    .time-text { font-size: 12px; color: rgba(0,0,0,.45); white-space: nowrap; }
+
+    /* Status badges */
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 500; white-space: nowrap;
+    }
+    .status-badge.running  { background: #e6f7ff; color: #1890ff; border: 1px solid #91d5ff; }
+    .status-badge.completed{ background: #f6ffed; color: #389e0d; border: 1px solid #b7eb8f; }
+    .status-badge.cancelled{ background: #f5f5f5; color: rgba(0,0,0,.45); border: 1px solid #d9d9d9; }
+    .running-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: #1890ff;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* Result summary */
+    .result-summary { display: flex; gap: 12px; }
+    .result-fail { font-size: 12px; color: #ff4d4f; }
+    .result-pass { font-size: 12px; color: #52c41a; }
+    .result-dash { font-size: 12px; color: rgba(0,0,0,.25); }
+
+    /* Action btns */
+    .action-btns { display: flex; gap: 8px; align-items: center; }
+    .link-btn {
+      font-size: 13px; color: #1890ff; cursor: pointer; background: none;
+      border: none; padding: 0; white-space: nowrap;
+    }
+    .link-btn:hover { color: #40a9ff; }
+    .link-btn.disabled { color: rgba(0,0,0,.25); cursor: not-allowed; }
+    .link-btn.danger { color: #ff4d4f; }
+    .link-btn.danger:hover { color: #ff7875; }
+    .action-divider { color: #e8e8e8; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 14px; border-radius: 4px; font-size: 13px;
+      cursor: pointer; border: 1px solid #d9d9d9;
+      background: #fff; color: rgba(0,0,0,.65); transition: all .15s; white-space: nowrap;
+    }
+    .btn:hover { border-color: #1890ff; color: #1890ff; }
+    .btn.primary { background: #1890ff; border-color: #1890ff; color: #fff; }
+    .btn.primary:hover { background: #40a9ff; border-color: #40a9ff; }
+
+    /* Toast */
+    .toast-wrap {
+      position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
+      z-index: 9999; display: flex; flex-direction: column; align-items: center;
+      gap: 8px; pointer-events: none;
+    }
+    .toast {
+      background: rgba(0,0,0,.75); color: #fff; padding: 7px 16px;
+      border-radius: 6px; font-size: 13px; opacity: 1; transition: opacity .3s;
+    }
+    .toast.fade { opacity: 0; }
+  </style>
+</head>
+<body>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <a class="sidebar-back" href="../frontend-outside-eng/projects-eng.html">
+    <svg viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Back to Projects
+  </a>
+  <nav class="sidebar-menu">
+    <a class="menu-item" href="project-overview-eng.html">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M5 6h6M5 9h4"/></svg>
+      Overview
+    </a>
+    <a class="menu-item" href="doc-list-eng.html">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2h8a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M5 6h6M5 9h6M5 12h3"/></svg>
+      Document Review
+    </a>
+    <a class="menu-item" href="archives-eng.html">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 5h12v8H2z"/><path d="M2 5l2-3h5l2 3"/></svg>
+      Archive
+    </a>
+    <a class="menu-item active" href="review-report-eng.html">
+      <svg viewBox="0 0 16 16" fill="none"><path d="M4 2h8a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3"/><path d="M6 6h4M6 9h4M6 12h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      Review Reports
+    </a>
+    <a class="menu-item" href="review-config-eng.html">
+      <svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="13" cy="11" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M13 9.5V11l.8.8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      Review Config
+    </a>
+  </nav>
+</aside>
+      Review Config
+    </a>
+  </nav>
+</aside>
+
+<!-- Top bar -->
+<div class="main">
+  <header class="top-bar">
+    <div class="project-title">
+      <span class="project-name">Demo Project</span>
+      <span class="ant-tag">Common Criteria</span>
+      <span class="ant-tag">EAL4</span>
+    </div>
+    <div class="top-bar-right">
+      <div class="bell-wrap">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 16.5a1.5 1.5 0 003 0H6a1.5 1.5 0 003 0zm6-4.5H3l1.5-1.5V7.5C4.5 5.01 6.51 3 9 3s4.5 2.01 4.5 4.5V10.5L15 12z" fill="rgba(0,0,0,0.65)"/></svg>
+        <div class="bell-badge">3</div>
+      </div>
+      <div class="user-avatar">P</div>
+    </div>
+  </header>
+
+  <div class="page-content">
+    <div class="list-card">
+      <table id="reportTable">
+        <thead>
+          <tr>
+            <th style="width:28%">Document</th>
+            <th style="width:8%">Version</th>
+            <th style="width:18%">Review Scope</th>
+            <th style="width:9%">Submitted By</th>
+            <th style="width:12%">Started At</th>
+            <th style="width:10%">Result</th>
+            <th style="width:8%">Status</th>
+            <th style="width:7%">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="reportList"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Mock 数据 ──────────────────────────────────────────────────────────────
+const REPORTS = [
+  {
+    id: 'r1',
+    docName: 'Demo-ASE_ST-Security_Target-V1.0',
+    docSource: 'platform',
+    version: 'S1-V1.0',
+    scope: ['ASE_INT.1', 'ASE_OBJ.2', 'ASE_SPD.1', 'ASE_REQ.2'],
+    initiator: 'Phil',
+    startedAt: Date.now() - 1000 * 3600 * 2,
+    completedAt: Date.now() - 1000 * 3600 * 2 + 1000 * 60 * 5,
+    status: 'completed',
+    failItems: [
+      {
+        id: 'ASE_INT.1-2',
+        cem: 'The evaluator shall check that the ST reference uniquely identifies the ST.',
+        observation: 'The ST reference "TEE-ST-2024-001" does not embed a version identifier, making it indistinguishable from previous iterations. A unique version-qualified reference is required.',
+      },
+      {
+        id: 'ASE_OBJ.2-1',
+        cem: 'The evaluator shall check that the statement of security objectives identifies and defines the security objectives for the TOE and the operational environment.',
+        observation: 'Section 4.1 enumerates security objectives but omits formal definitions for OT.ISOLATION and OT.AUDIT. Without measurable criteria, evaluation against these objectives cannot be performed.',
+      },
+      {
+        id: 'ASE_REQ.2-2',
+        cem: 'The evaluator shall check that each dependency of the SFRs is satisfied.',
+        observation: 'FDP_IFC.1 has an unresolved dependency on FDP_IFF.1. The security requirements rationale (Section 6.2) does not trace or justify this dependency.',
+      },
+    ],
+    passItems: ['ASE_INT.1-1', 'ASE_INT.1-3', 'ASE_OBJ.2-2', 'ASE_OBJ.2-3', 'ASE_SPD.1-1', 'ASE_SPD.1-2', 'ASE_REQ.2-1', 'ASE_REQ.2-3'],
+  },
+  {
+    id: 'r2',
+    docName: 'Demo-ADV_ARC-Security_Architecture-V0.9.docx',
+    docSource: 'archive',
+    version: null,
+    scope: ['ADV_ARC.1'],
+    initiator: 'Phil',
+    startedAt: Date.now() - 86400000,
+    completedAt: Date.now() - 86400000 + 1000 * 60 * 8,
+    status: 'completed',
+    failItems: [
+      {
+        id: 'ADV_ARC.1-3',
+        cem: 'The evaluator shall examine the security architecture description to determine that it describes how the TSF protects itself from tampering by untrusted subjects.',
+        observation: 'Section 3.4 mentions memory isolation at a high level but does not describe the specific mechanism by which the TSF detects or prevents tampering by normal-world processes. A concrete description of the self-protection mechanism is required.',
+      },
+    ],
+    passItems: ['ADV_ARC.1-1', 'ADV_ARC.1-2', 'ADV_ARC.1-4'],
+  },
+  {
+    id: 'r3',
+    docName: 'Demo-OS-Architecture-Description.docx',
+    docSource: 'archive',
+    version: null,
+    scope: ['ADV_ARC.1', 'ADV_FSP.5'],
+    initiator: 'Phil',
+    startedAt: Date.now() - 1000 * 60 * 20,
+    completedAt: null,
+    status: 'running',
+    failItems: [],
+    passItems: [],
+  },
+  {
+    id: 'r4',
+    docName: 'Demo-ADV_FSP-Functional_Specification-V1.0',
+    docSource: 'platform',
+    version: 'D-0.9',
+    scope: ['ADV_FSP.5', 'ADV_TDS.4'],
+    initiator: 'Derenc Frank',
+    startedAt: Date.now() - 86400000 * 3,
+    completedAt: null,
+    status: 'cancelled',
+    failItems: [],
+    passItems: [],
+  },
+];
+
+// ── 工具 ───────────────────────────────────────────────────────────────────
+function relTime(ts) {
+  const diff = Date.now() - ts;
+  const s = Math.floor(diff / 1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s / 60) + ' min ago';
+  if (s < 86400) return Math.floor(s / 3600) + ' hr ago';
+  if (s < 86400 * 30) return Math.floor(s / 86400) + ' d ago';
+  return fmtDate(ts);
+}
+
+function fmtDate(ts) {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function statusBadge(s) {
+  if (s === 'running')   return `<span class="status-badge running"><span class="running-dot"></span>In Review</span>`;
+  if (s === 'completed') return `<span class="status-badge completed">Completed</span>`;
+  if (s === 'cancelled') return `<span class="status-badge cancelled">Cancelled</span>`;
+  return '';
+}
+
+// ── 渲染列表 ───────────────────────────────────────────────────────────────
+function render() {
+  const tbody = document.getElementById('reportList');
+  tbody.innerHTML = REPORTS.map(r => {
+    const scopeText = r.scope.length <= 2
+      ? r.scope.join(', ')
+      : `${r.scope.slice(0, 2).join(', ')} and ${r.scope.length} more`;
+
+    const resultHtml = r.status === 'completed'
+      ? `<div class="result-summary">
+           <span class="result-fail">✗ ${r.failItems.length} failed</span>
+           <span class="result-pass">✓ ${r.passItems.length} Pass</span>
+         </div>`
+      : `<span class="result-dash">—</span>`;
+
+    const canView   = r.status === 'completed';
+    const canExport = r.status === 'completed';
+    const canCancel = r.status === 'running';
+
+    return `
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="source-badge ${r.docSource}">${r.docSource === 'platform' ? 'Platform' : 'Archive'}</span>
+            <span class="doc-name" title="${r.docName}">${r.docName}</span>
+          </div>
+        </td>
+        <td><span class="ver-text">${r.version || '—'}</span></td>
+        <td><span class="scope-text" title="${r.scope.join(', ')}">${scopeText}</span></td>
+        <td>${r.initiator}</td>
+        <td><span class="time-text">${relTime(r.startedAt)}</span></td>
+        <td>${resultHtml}</td>
+        <td>${statusBadge(r.status)}</td>
+        <td>
+          <div class="action-btns">
+            ${canCancel ? `
+              <button class="link-btn danger" onclick="cancelReport('${r.id}')">Cancel</button>
+            ` : `
+              <button class="link-btn ${canView ? '' : 'disabled'}"
+                onclick="${canView ? `location.href='review-detail-eng.html?id=${r.id}'` : ''}"
+              >View</button>
+              <span class="action-divider">|</span>
+              <button class="link-btn ${canExport ? '' : 'disabled'}"
+                onclick="${canExport ? `exportMdById('${r.id}')` : ''}"
+              >Export</button>
+            `}
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+// ── Cancel审阅 ───────────────────────────────────────────────────────────────
+function cancelReport(id) {
+  const r = REPORTS.find(x => x.id === id);
+  if (!r || r.status !== 'running') return;
+  r.status = 'cancelled';
+  render();
+  toast('Review cancelled');
+}
+
+// ── 导出 MD ────────────────────────────────────────────────────────────────
+function exportMdById(id) {
+  const r = REPORTS.find(x => x.id === id);
+  if (!r) return;
+  let md = `# Review Reports\n\n| Field | Value |\n|------|------|\n`;
+  md += `| Document | ${r.docName} |\n`;
+  if (r.version) md += `| Version | ${r.version} |\n`;
+  md += `| Source | ${r.docSource === 'platform' ? 'Platform' : 'Archive'} |\n`;
+  md += `| Review Scope | ${r.scope.join(', ')} |\n`;
+  md += `| Submitted By | ${r.initiator} |\n`;
+  md += `| Started At | ${fmtDate(r.startedAt)} |\n`;
+  if (r.completedAt) md += `| Completed At | ${fmtDate(r.completedAt)} |\n`;
+  md += `\n---\n\n## Failed Work Units (${r.failItems.length})\n\n`;
+  if (r.failItems.length === 0) {
+    md += `No failed work units.\n\n`;
+  } else {
+    r.failItems.forEach(item => {
+      md += `### ${item.id}\n\n**Work Unit**\n\n${item.cem}\n\n**Observation**\n\n${item.observation}\n\n`;
+    });
+  }
+  md += `---\n\n## Passed Work Units (${r.passItems.length})\n\n`;
+  md += r.passItems.length > 0 ? r.passItems.join('、') + '\n' : 'No passed work units.\n';
+  const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Review Reports_${r.docName}_${fmtDate(r.startedAt).replace(/[: ]/g, '-')}.md`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('MD file exported');
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function toast(msg) {
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(() => { el.classList.add('fade'); setTimeout(() => el.remove(), 300); }, 2000);
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TSFI 折叠面板</title>
+  <link rel="stylesheet" href="https://unpkg.com/ant-design-vue@3.x/dist/antd.min.css">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://unpkg.com/ant-design-vue@3.x/dist/antd.min.js"></script>
+  <style>
+    body { background: #f5f5f5; padding: 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .container { max-width: 1100px; margin: 0 auto; background: #fff; padding: 24px; border-radius: 8px; }
+    .panel-header { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+    .panel-title { font-weight: 500; }
+    .panel-subtitle { color: #999; font-size: 12px; margin-left: 8px; }
+
+    /* dragger handle */
+    .dragger-wrap { position: relative; display: flex; align-items: center; }
+    .dragger-btn {
+      width: 28px; height: 28px; border-radius: 4px; cursor: grab;
+      display: flex; align-items: center; justify-content: center;
+      color: #bfbfbf; transition: background 0.15s, color 0.15s;
+      flex-shrink: 0;
+    }
+    .dragger-btn:hover { background: #f0f0f0; color: #666; }
+    .dragger-btn:active { cursor: grabbing; }
+    .dragger-btn svg { pointer-events: none; }
+
+    /* dropdown menu */
+    .dragger-menu {
+      position: fixed; z-index: 9999;
+      background: #fff; border-radius: 8px; padding: 4px 0;
+      box-shadow: 0 6px 16px rgba(0,0,0,.12), 0 3px 6px rgba(0,0,0,.08);
+      min-width: 120px; display: none;
+    }
+    .dragger-menu.visible { display: block; }
+    .dragger-menu-item {
+      padding: 8px 16px; font-size: 14px; cursor: pointer; color: #333;
+      display: flex; align-items: center; gap: 8px; white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .dragger-menu-item:hover { background: #f5f5f5; }
+    .dragger-menu-item.danger { color: #ff4d4f; }
+    .dragger-menu-item.danger:hover { background: #fff1f0; }
+
+    /* drag-over visual */
+    .collapse-item.drag-over-top { border-top: 2px solid #4096ff; }
+    .collapse-item.drag-over-bottom { border-bottom: 2px solid #4096ff; }
+    .collapse-item.dragging { opacity: 0.4; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 24px; padding: 8px 0; }
+    .form-item { display: flex; flex-direction: column; gap: 6px; }
+    .form-label { font-size: 14px; color: #333; }
+    .form-label .required { color: #ff4d4f; margin-right: 4px; }
+    .form-label .tip-icon { color: #aaa; margin-left: 4px; cursor: help; font-size: 12px; }
+    .form-input { position: relative; }
+    .form-input input, .form-input select {
+      width: 100%; height: 32px; padding: 4px 30px 4px 11px;
+      border: 1px solid #d9d9d9; border-radius: 6px;
+      font-size: 14px; color: #333; outline: none;
+      box-sizing: border-box; background: #fff;
+      transition: border-color 0.2s;
+      appearance: none; -webkit-appearance: none;
+    }
+    .form-input input:focus, .form-input select:focus { border-color: #4096ff; box-shadow: 0 0 0 2px rgba(5,145,255,.1); }
+    .form-input .clear-icon {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      color: #bfbfbf; cursor: pointer; font-size: 13px; display: none;
+    }
+    .form-input:hover .clear-icon, .form-input input:focus ~ .clear-icon { display: block; }
+    .form-input .select-arrow {
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      color: #bfbfbf; pointer-events: none; font-size: 11px;
+    }
+    .add-btn {
+      margin-top: 16px; width: 100%; height: 40px;
+      border: 1px dashed #d9d9d9; border-radius: 6px;
+      background: #fafafa; color: #666; font-size: 14px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: all 0.2s;
+    }
+    .add-btn:hover { border-color: #4096ff; color: #4096ff; background: #f0f7ff; }
+    .collapse-list { border: 1px solid #d9d9d9; border-radius: 8px; overflow: hidden; }
+    .collapse-item { border-bottom: 1px solid #d9d9d9; overflow: hidden; }
+    .collapse-item:last-child { border-bottom: none; }
+    .collapse-header {
+      padding: 12px 16px; background: #fafafa; cursor: pointer;
+      display: flex; align-items: center; user-select: none;
+      transition: background 0.2s;
+    }
+    .collapse-header:hover { background: #f0f0f0; }
+    .collapse-arrow { margin-right: 10px; color: #666; transition: transform 0.2s; font-size: 11px; }
+    .collapse-arrow.open { transform: rotate(90deg); }
+    .collapse-body { padding: 16px; border-top: 1px solid #f0f0f0; display: none; }
+    .collapse-body.open { display: block; }
+    h2 { font-size: 18px; font-weight: 600; margin-bottom: 20px; color: #333; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h2>TSFI 接口列表</h2>
+  <div id="app">
+    <div class="collapse-list">
+    <div
+      v-for="(item, index) in items" :key="item.id"
+      class="collapse-item"
+      :class="{ dragging: dragState.draggingId === item.id, 'drag-over-top': dragState.overId === item.id && dragState.overPos === 'top', 'drag-over-bottom': dragState.overId === item.id && dragState.overPos === 'bottom' }"
+      :data-id="item.id"
+      @dragover.prevent="onDragOver($event, item.id)"
+      @dragleave="onDragLeave($event, item.id)"
+      @drop.prevent="onDrop($event, index)"
+    >
+      <div class="collapse-header" @click="toggle(index)">
+        <span class="collapse-arrow" :class="{ open: item.open }">&#9654;</span>
+        <div class="panel-header">
+          <span class="panel-title">
+            {{ item.name || ('接口 ' + (index + 1)) }}
+            <span class="panel-subtitle" v-if="item.identifier">{{ item.identifier }}</span>
+          </span>
+          <!-- dragger -->
+          <div class="dragger-wrap" @click.stop>
+            <div
+              class="dragger-btn"
+              draggable="true"
+              @mousedown="startLongPress(index)"
+              @mouseup="cancelLongPress"
+              @mouseleave="cancelLongPress"
+              @dragstart="onDragStart($event, index)"
+              @dragend="onDragEnd"
+              @click="toggleMenu(index, $event)"
+              title="拖动排序 / 点击操作"
+            >
+              <!-- 六点 dragger 图标 -->
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+                <circle cx="4" cy="2.5" r="1.2"/><circle cx="10" cy="2.5" r="1.2"/>
+                <circle cx="4" cy="7" r="1.2"/><circle cx="10" cy="7" r="1.2"/>
+                <circle cx="4" cy="11.5" r="1.2"/><circle cx="10" cy="11.5" r="1.2"/>
+              </svg>
+            </div>
+            <Teleport to="body">
+            <div class="dragger-menu" :class="{ visible: menuOpenIndex === index }" :style="menuOpenIndex === index ? { top: menuPos.top + 'px', left: menuPos.left + 'px' } : {}">
+              <div class="dragger-menu-item" @click="addBelow(index)">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>
+                在下方新增
+              </div>
+              <div class="dragger-menu-item danger" @click="remove(index)">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M2 4h10M5 4V2.5a.5.5 0 01.5-.5h3a.5.5 0 01.5.5V4M6 7v4M8 7v4M3 4l.7 7.3A1 1 0 004.7 12h4.6a1 1 0 001-.7L11 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none"/></svg>
+                删除
+              </div>
+            </div>
+            </Teleport>
+          </div>
+        </div>
+      </div>
+      <div class="collapse-body" :class="{ open: item.open }">
+        <div class="form-row">
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>TSFI名称 <span class="tip-icon" title="接口的名称">ℹ</span>：</label>
+            <div class="form-input">
+              <input type="text" v-model="item.name" placeholder="请输入TSFI名称" @input="clearOnEmpty(item, 'name')">
+              <span class="clear-icon" v-if="item.name" @click="item.name = ''">&#10005;</span>
+            </div>
+          </div>
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>TSFI标识 <span class="tip-icon" title="如 TSFI.XXX.N1">ℹ</span>：</label>
+            <div class="form-input">
+              <input type="text" v-model="item.identifier" placeholder="如 TSFI.XXX.N1" @input="clearOnEmpty(item, 'identifier')">
+              <span class="clear-icon" v-if="item.identifier" @click="item.identifier = ''">&#10005;</span>
+            </div>
+          </div>
+          <div class="form-item">
+            <label class="form-label">安全功能：</label>
+            <div class="form-input">
+              <select v-model="item.securityFeature">
+                <option value="">请选择安全功能</option>
+                <option v-for="opt in securityOptions" :key="opt" :value="opt">{{ opt }}</option>
+              </select>
+              <span class="select-arrow">&#9660;</span>
+            </div>
+          </div>
+          <div class="form-item">
+            <label class="form-label">目的 <span class="tip-icon" title="接口的用途说明">ℹ</span>：</label>
+            <div class="form-input">
+              <input type="text" v-model="item.purpose" placeholder="请输入接口目的">
+              <span class="clear-icon" v-if="item.purpose" @click="item.purpose = ''">&#10005;</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+
+    <button class="add-btn" @click="addItem">
+      <span style="font-size:16px">+</span> 新增 TSFI 接口
+    </button>
+  </div>
+</div>
+
+<script>
+const { createApp, ref, reactive } = Vue;
+
+createApp({
+  setup() {
+    let nextId = 8;
+    const items = ref([
+      { id: 1, name: '接口1', identifier: 'TSFI.AAA.N1', securityFeature: '安全特征1', purpose: '', open: false },
+      { id: 2, name: '接口2', identifier: 'TSFI.AAA.N2', securityFeature: '', purpose: '', open: false },
+      { id: 3, name: '接口3', identifier: 'TSFI.AAA.N3', securityFeature: '', purpose: '', open: false },
+      { id: 4, name: '接口4', identifier: 'TSFI.AAA.N4', securityFeature: '', purpose: '', open: false },
+      { id: 5, name: '接口5', identifier: 'TSFI.BBB.N1', securityFeature: '', purpose: '', open: false },
+      { id: 6, name: '接口6', identifier: 'TSFI.BBB.N2', securityFeature: '', purpose: '', open: false },
+      { id: 7, name: '接口7', identifier: 'TSFI.BBB.N3', securityFeature: '', purpose: '', open: false },
+    ]);
+
+    const securityOptions = ['安全特征1', '安全特征2', '安全特征3', '访问控制', '身份认证', '数据加密'];
+
+    // ---- collapse ----
+    function toggle(index) {
+      const isOpen = items.value[index].open;
+      items.value.forEach(item => { item.open = false; });
+      if (!isOpen) items.value[index].open = true;
+    }
+
+    // ---- menu ----
+    const menuOpenIndex = ref(-1);
+    const menuPos = reactive({ top: 0, left: 0 });
+    function toggleMenu(index, event) {
+      if (menuOpenIndex.value === index) { menuOpenIndex.value = -1; return; }
+      const rect = event.currentTarget.getBoundingClientRect();
+      menuPos.top = rect.bottom + 4;
+      menuPos.left = rect.right - 120;
+      menuOpenIndex.value = index;
+    }
+    function closeMenu() { menuOpenIndex.value = -1; }
+    document.addEventListener('click', closeMenu);
+
+    // ---- add / remove ----
+    function nextIdentifier(identifier) {
+      const match = identifier && identifier.match(/^(.*?)(\d+)$/);
+      if (!match) return '';
+      return match[1] + (parseInt(match[2], 10) + 1);
+    }
+    function addItem() {
+      const prev = items.value[items.value.length - 1];
+      const identifier = prev ? nextIdentifier(prev.identifier) : '';
+      items.value.push({ id: nextId++, name: '', identifier, securityFeature: '', purpose: '', open: true });
+    }
+    function addBelow(index) {
+      const identifier = nextIdentifier(items.value[index].identifier);
+      items.value.splice(index + 1, 0, { id: nextId++, name: '', identifier, securityFeature: '', purpose: '', open: true });
+      closeMenu();
+    }
+    function remove(index) {
+      items.value.splice(index, 1);
+      closeMenu();
+    }
+
+    // ---- drag & drop ----
+    const dragState = reactive({ draggingId: null, draggingIndex: -1, overId: null, overPos: null });
+    let longPressTimer = null;
+
+    function startLongPress(index) {
+      longPressTimer = setTimeout(() => { /* grab cursor already set */ }, 300);
+    }
+    function cancelLongPress() { clearTimeout(longPressTimer); }
+
+    function onDragStart(e, index) {
+      dragState.draggingId = items.value[index].id;
+      dragState.draggingIndex = index;
+      e.dataTransfer.effectAllowed = 'move';
+      closeMenu();
+    }
+    function onDragEnd() {
+      dragState.draggingId = null;
+      dragState.draggingIndex = -1;
+      dragState.overId = null;
+      dragState.overPos = null;
+    }
+    function onDragOver(e, id) {
+      if (dragState.draggingId === id) return;
+      const el = e.currentTarget;
+      const rect = el.getBoundingClientRect();
+      dragState.overId = id;
+      dragState.overPos = (e.clientY - rect.top) < rect.height / 2 ? 'top' : 'bottom';
+    }
+    function onDragLeave(e, id) {
+      // 只有真正离开整个 collapse-item 时才清除状态，忽略移入子元素触发的 dragleave
+      if (dragState.overId === id && !e.currentTarget.contains(e.relatedTarget)) {
+        dragState.overId = null;
+        dragState.overPos = null;
+      }
+    }
+    function onDrop(e, toIndex) {
+      const fromIndex = dragState.draggingIndex;
+      if (fromIndex === -1 || fromIndex === toIndex) { onDragEnd(); return; }
+      // overPos 可能因 dragleave 误触发而为 null，回退到 dragover 时记录的位置
+      const overPos = dragState.overPos ?? 'top';
+      const arr = items.value;
+      const [moved] = arr.splice(fromIndex, 1);
+      let insertAt = toIndex > fromIndex ? toIndex - 1 : toIndex;
+      if (overPos === 'bottom') insertAt += 1;
+      arr.splice(insertAt, 0, moved);
+      onDragEnd();
+    }
+
+    function clearOnEmpty() {}
+
+    return { items, securityOptions, toggle, addItem, addBelow, remove, menuOpenIndex, menuPos, toggleMenu, dragState, startLongPress, cancelLongPress, onDragStart, onDragEnd, onDragOver, onDragLeave, onDrop, clearOnEmpty };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

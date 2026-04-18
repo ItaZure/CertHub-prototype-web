@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>缩略语 - CertHub</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "PingFang SC","Microsoft YaHei",sans-serif; font-size: 14px; color: rgba(0,0,0,0.85); background: #f0f2f5; height: 100vh; overflow: hidden; display: flex; }
+
+    .sidebar { width: 208px; flex-shrink: 0; background: #fff; height: 100vh; display: flex; flex-direction: column; border-right: 1px solid #f0f0f0; }
+    .sidebar-logo { height: 50px; display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid #f0f0f0; font-weight: 700; font-size: 16px; color: #1890ff; }
+    .sidebar-menu { padding: 12px 0; flex: 1; }
+    .menu-item { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px 0 20px; border-radius: 8px; margin: 0 4px 2px; cursor: pointer; color: rgba(0,0,0,0.65); transition: all 0.2s; }
+    .menu-item:hover { background: #f5f5f5; color: rgba(0,0,0,0.85); }
+    .menu-item.active { background: #e6f7ff; color: #1890ff; }
+    .menu-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    .main-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .header { height: 50px; background: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; border-bottom: 1px solid #f0f0f0; flex-shrink: 0; }
+    .breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 14px; color: rgba(0,0,0,0.45); }
+    .breadcrumb .current { color: rgba(0,0,0,0.85); }
+    .user-avatar { width: 28px; height: 28px; border-radius: 50%; background: #1890ff; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; cursor: pointer; }
+
+    .content { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; }
+
+    .acronym-wrap { background: #fff; border-radius: 8px; padding: 20px 24px; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    .search-wrap { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
+    .search-input-wrap { position: relative; flex: 1; max-width: 320px; }
+    .search-input-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #bfbfbf; width: 14px; height: 14px; }
+    .search-input-wrap input { width: 100%; height: 32px; border: 1px solid #d9d9d9; border-radius: 6px; padding: 0 32px 0 32px; font-size: 14px; outline: none; }
+    .search-input-wrap input:focus { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.2); }
+    .search-clear { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); cursor: pointer; color: rgba(0,0,0,0.25); display: none; font-size: 14px; }
+    .search-input-wrap input:not(:placeholder-shown) ~ .search-clear { display: block; }
+
+    .btn { display: inline-flex; align-items: center; gap: 4px; height: 32px; padding: 0 15px; border-radius: 6px; font-size: 14px; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; }
+    .btn-primary { background: #1890ff; color: #fff; border-color: #1890ff; }
+    .btn-primary:hover { background: #40a9ff; border-color: #40a9ff; }
+
+    .table-wrap { flex: 1; overflow-y: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { background: #fafafa; padding: 12px 16px; text-align: left; font-weight: 500; color: rgba(0,0,0,0.85); border-bottom: 1px solid #f0f0f0; white-space: nowrap; position: sticky; top: 0; z-index: 1; }
+    tbody td { padding: 10px 16px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: #fafafa; }
+
+    .cell-input { width: 100%; height: 32px; border: 1px solid #d9d9d9; border-radius: 6px; padding: 0 11px; font-size: 14px; outline: none; }
+    .cell-input:focus { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.2); }
+
+    .action-link { color: #1890ff; cursor: pointer; padding: 0 4px; font-size: 14px; }
+    .action-link:hover { color: #40a9ff; }
+    .action-link.danger { color: #ff4d4f; }
+    .action-link.danger:hover { color: #ff7875; }
+
+    .empty-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(0,0,0,0.45); gap: 12px; }
+    .empty-wrapper svg { width: 80px; height: 80px; opacity: 0.3; }
+    .empty-text { font-size: 14px; color: rgba(0,0,0,0.85); }
+
+    /* Popconfirm */
+    .popconfirm { position: relative; display: inline-block; }
+    .popconfirm-box { display: none; position: absolute; right: 0; bottom: calc(100% + 8px); background: #fff; border-radius: 8px; box-shadow: 0 6px 24px rgba(0,0,0,0.15); padding: 12px 16px; width: 200px; z-index: 100; }
+    .popconfirm-box.open { display: block; }
+    .popconfirm-title { font-size: 14px; color: rgba(0,0,0,0.85); margin-bottom: 12px; }
+    .popconfirm-btns { display: flex; justify-content: flex-end; gap: 8px; }
+    .pop-btn { height: 24px; padding: 0 10px; border-radius: 4px; font-size: 12px; cursor: pointer; border: 1px solid transparent; }
+    .pop-btn-cancel { background: #fff; border-color: #d9d9d9; color: rgba(0,0,0,0.85); }
+    .pop-btn-ok { background: #1890ff; color: #fff; border-color: #1890ff; }
+  </style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-logo">CertHub 后台</div>
+  <div class="sidebar-menu">
+    <div class="menu-item" onclick="location.href='template.html'">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h12v2H2V2zm0 4h8v2H2V6zm0 4h10v2H2v-2z"/></svg>
+      文档模板
+    </div>
+    <div class="menu-item" onclick="location.href='profile.html'">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 2a5 5 0 110 10A5 5 0 018 3z"/></svg>
+      保护轮廓(PP)
+    </div>
+    <div class="menu-item active">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 3h14v2H1V3zm2 4h10v2H3V7zm1 4h8v2H4v-2z"/></svg>
+      缩略语
+    </div>
+  </div>
+</div>
+
+<div class="main-wrap">
+  <div class="header">
+    <div class="breadcrumb">
+      <span>后台管理</span>
+      <span>/</span>
+      <span class="current">缩略语</span>
+    </div>
+    <div class="user-avatar">管</div>
+  </div>
+
+  <div class="content">
+    <div class="acronym-wrap">
+      <div class="search-wrap">
+        <div class="search-input-wrap">
+          <svg viewBox="0 0 1024 1024" fill="currentColor"><path d="M909.6 854.5L649.9 594.8C690.2 542.7 712 479 712 412c0-80.2-31.3-155.4-87.9-212.1-56.6-56.7-132-87.9-212.1-87.9s-155.5 31.3-212.1 87.9C143.2 256.5 112 331.8 112 412c0 80.1 31.3 155.5 87.9 212.1C256.5 680.8 331.8 712 412 712c67 0 130.6-21.8 182.7-62l259.7 259.6a8.2 8.2 0 0011.6 0l43.6-43.5a8.2 8.2 0 000-11.6zM570.4 570.4C528 612.7 471.8 636 412 636s-116-23.3-158.4-65.6C211.3 528 188 471.8 188 412s23.3-116.1 65.6-158.4C296 211.3 352.2 188 412 188s116.1 23.3 158.4 65.6S636 352.2 636 412s-23.3 116.1-65.6 158.4z"/></svg>
+          <input type="text" id="searchInput" placeholder="搜索缩略语名称/符号" oninput="handleSearch()" />
+          <span class="search-clear" onclick="clearSearch()">✕</span>
+        </div>
+        <button class="btn btn-primary" onclick="handleAdd()">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M6.5 1.5v4h4v1h-4v4h-1v-4h-4v-1h4v-4z"/></svg>
+          新增缩略语
+        </button>
+      </div>
+
+      <div class="table-wrap" id="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:160px">名称/符号</th>
+              <th style="width:400px">全称</th>
+              <th>解释</th>
+              <th style="width:120px">操作</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="empty-wrapper" id="emptyWrapper" style="display:none">
+        <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="48" height="48" rx="4"/><line x1="20" y1="24" x2="44" y2="24"/><line x1="20" y1="32" x2="44" y2="32"/><line x1="20" y1="40" x2="36" y2="40"/></svg>
+        <div class="empty-text" id="emptyText">当前暂无缩略语</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let tempId = -1;
+  let acronymList = [
+    { id: 1, acronym: 'CC', engFullName: 'Common Criteria', term: '通用准则，信息技术安全评估标准', isEditing: false },
+    { id: 2, acronym: 'TOE', engFullName: 'Target of Evaluation', term: '评估对象', isEditing: false },
+    { id: 3, acronym: 'ST', engFullName: 'Security Target', term: '安全目标', isEditing: false },
+    { id: 4, acronym: 'PP', engFullName: 'Protection Profile', term: '保护轮廓', isEditing: false },
+    { id: 5, acronym: 'EAL', engFullName: 'Evaluation Assurance Level', term: '评估保证级别', isEditing: false },
+    { id: 6, acronym: 'SFR', engFullName: 'Security Functional Requirement', term: '安全功能要求', isEditing: false },
+    { id: 7, acronym: 'SAR', engFullName: 'Security Assurance Requirement', term: '安全保证要求', isEditing: false },
+  ];
+  let searchKeyword = '';
+
+  function getFilteredList() {
+    if (!searchKeyword) return acronymList;
+    return acronymList.filter(item =>
+      item.acronym.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+      (item.engFullName && item.engFullName.toLowerCase().includes(searchKeyword.toLowerCase()))
+    );
+  }
+
+  function render() {
+    const list = getFilteredList();
+    const tbody = document.getElementById('tableBody');
+    const emptyWrapper = document.getElementById('emptyWrapper');
+    const tableWrap = document.getElementById('tableWrap');
+    const emptyText = document.getElementById('emptyText');
+
+    if (list.length === 0) {
+      tableWrap.style.display = 'none';
+      emptyWrapper.style.display = 'flex';
+      emptyText.textContent = searchKeyword ? '未找到相关结果' : '当前暂无缩略语';
+      return;
+    }
+
+    tableWrap.style.display = 'block';
+    emptyWrapper.style.display = 'none';
+
+    tbody.innerHTML = list.map(item => `
+      <tr>
+        <td>
+          ${item.isEditing
+            ? `<input class="cell-input" value="${item.acronym}" oninput="updateField(${item.id},'acronym',this.value)" placeholder="请输入名称/符号" maxlength="100" />`
+            : `<span>${item.acronym}</span>`}
+        </td>
+        <td>
+          ${item.isEditing
+            ? `<input class="cell-input" value="${item.engFullName}" oninput="updateField(${item.id},'engFullName',this.value)" placeholder="请输入全称" maxlength="100" />`
+            : `<span>${item.engFullName}</span>`}
+        </td>
+        <td>
+          ${item.isEditing
+            ? `<input class="cell-input" value="${item.term}" oninput="updateField(${item.id},'term',this.value)" placeholder="请输入解释" maxlength="100" />`
+            : `<span>${item.term}</span>`}
+        </td>
+        <td>
+          ${item.isEditing
+            ? `<span class="action-link" onclick="handleSave(${item.id})">保存</span>
+               <span class="action-link danger" onclick="handleCancel(${item.id})">取消</span>`
+            : `<span class="action-link" onclick="handleEdit(${item.id})">编辑</span>
+               <span class="action-link danger" onclick="handleDelete(${item.id})">删除</span>`}
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function updateField(id, field, value) {
+    const item = acronymList.find(i => i.id === id);
+    if (item) item[field] = value;
+  }
+
+  function handleSearch() {
+    searchKeyword = document.getElementById('searchInput').value;
+    render();
+  }
+
+  function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    searchKeyword = '';
+    render();
+  }
+
+  function hasEditingItem() {
+    return acronymList.some(i => i.isEditing);
+  }
+
+  function handleAdd() {
+    if (hasEditingItem()) { alert('每次只能操作一条数据'); return; }
+    acronymList.unshift({ id: tempId--, acronym: '', engFullName: '', term: '', isEditing: true, isNew: true });
+    render();
+  }
+
+  function handleEdit(id) {
+    if (hasEditingItem()) { alert('每次只能操作一条数据'); return; }
+    const item = acronymList.find(i => i.id === id);
+    if (item) { item.isEditing = true; render(); }
+  }
+
+  function handleSave(id) {
+    const item = acronymList.find(i => i.id === id);
+    if (!item) return;
+    if (!item.acronym.trim()) { alert('请输入名称/符号'); return; }
+    item.isEditing = false;
+    item.isNew = false;
+    render();
+  }
+
+  function handleCancel(id) {
+    const item = acronymList.find(i => i.id === id);
+    if (!item) return;
+    if (item.isNew) {
+      acronymList = acronymList.filter(i => i.id !== id);
+    } else {
+      item.isEditing = false;
+    }
+    render();
+  }
+
+  function handleDelete(id) {
+    if (confirm('删除此项?')) {
+      acronymList = acronymList.filter(i => i.id !== id);
+      render();
+    }
+  }
+
+  render();
+</script>
+</body>
+</html>

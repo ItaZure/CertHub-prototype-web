@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>页面不存在 - CertHub</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      font-size: 14px;
+      color: rgba(0,0,0,0.85);
+      background: #f5fafc;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top-bar {
+      height: 50px;
+      background: #fff;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      flex-shrink: 0;
+    }
+
+    .logo {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1890ff;
+      letter-spacing: 0.5px;
+    }
+
+    .user-agency {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: #1890ff;
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 24px;
+    }
+
+    .error-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 64px 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      max-width: 520px;
+      width: 100%;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    /* 大号404数字作为主视觉 */
+    .error-number {
+      font-size: 96px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 20px;
+      /* 渐变色 */
+      background: linear-gradient(135deg, #91caff 0%, #1890ff 50%, #096dd9 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -4px;
+      user-select: none;
+    }
+
+    /* 在数字下方的插图 */
+    .error-illustration {
+      margin-bottom: 28px;
+    }
+
+    .error-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: rgba(0,0,0,0.85);
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+
+    .error-desc {
+      font-size: 14px;
+      color: rgba(0,0,0,0.45);
+      margin-bottom: 36px;
+      line-height: 1.8;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 36px;
+      padding: 0 20px;
+      background: #1890ff;
+      color: #fff;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+      text-decoration: none;
+    }
+    .btn-primary:hover { background: #40a9ff; }
+    .btn-primary svg { flex-shrink: 0; }
+  </style>
+</head>
+<body>
+
+  <header class="top-bar">
+    <span class="logo">CertHub</span>
+    <div class="user-agency">张</div>
+  </header>
+
+  <main class="main">
+    <div class="error-card">
+
+      <!-- 大号数字 -->
+      <div class="error-number">404</div>
+
+      <!-- 简单插图 -->
+      <div class="error-illustration">
+        <svg width="100" height="64" viewBox="0 0 100 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- 地平线 -->
+          <ellipse cx="50" cy="56" rx="44" ry="6" fill="#e6efff"/>
+          <!-- 路标杆 -->
+          <rect x="47" y="18" width="5" height="38" rx="2" fill="#adc6ff"/>
+          <!-- 路标牌（左） -->
+          <rect x="20" y="10" width="32" height="18" rx="3" fill="#1890ff"/>
+          <path d="M20 19 L14 24 L20 29" fill="#1890ff"/>
+          <rect x="24" y="15" width="16" height="3" rx="1.5" fill="rgba(255,255,255,0.5)"/>
+          <rect x="24" y="21" width="12" height="3" rx="1.5" fill="rgba(255,255,255,0.5)"/>
+          <!-- 路标牌（右） -->
+          <rect x="48" y="6" width="32" height="18" rx="3" fill="#69b1ff"/>
+          <path d="M80 15 L86 20 L80 25" fill="#69b1ff"/>
+          <rect x="52" y="11" width="18" height="3" rx="1.5" fill="rgba(255,255,255,0.5)"/>
+          <rect x="52" y="17" width="14" height="3" rx="1.5" fill="rgba(255,255,255,0.5)"/>
+          <!-- 问号 -->
+          <circle cx="50" cy="54" r="0" fill="none"/>
+        </svg>
+      </div>
+
+      <h1 class="error-title">页面不存在</h1>
+      <p class="error-desc">您访问的页面不存在或已迁移<br>请检查链接是否正确，或返回首页重新导航</p>
+
+      <a href="../cert/proList.html" class="btn-primary">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        返回首页
+      </a>
+    </div>
+  </main>
+
+</body>
+</html>

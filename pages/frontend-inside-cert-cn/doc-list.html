@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>文档审阅 - CertHub</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      font-size: 14px; color: rgba(0,0,0,0.85);
+      background: #f5fafc; display: flex; min-height: 100vh;
+    }
+
+    /* === 侧边栏 === */
+    .sidebar {
+      position: fixed; left: 0; top: 0; bottom: 0; width: 240px;
+      background: #fff; display: flex; flex-direction: column;
+      border-right: 1px solid #f0f0f0; z-index: 100;
+    }
+    .sidebar-back {
+      height: 48px; display: flex; align-items: center; gap: 8px;
+      padding: 0 16px 0 12px; font-size: 15px; font-weight: 500;
+      color: rgba(0,0,0,0.85); cursor: pointer;
+      border-bottom: 1px solid #f0f0f0; transition: color 0.2s;
+    }
+    .sidebar-back:hover { color: #1890ff; }
+    .sidebar-back svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .sidebar-menu { flex: 1; padding: 8px 0; overflow-y: auto; }
+    .menu-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 0 16px 0 24px; height: 40px;
+      cursor: pointer; color: rgba(0,0,0,0.65); font-size: 14px;
+      transition: all 0.2s;
+    }
+    .menu-item:hover { background: #e6f7ff; color: #1890ff; }
+    .menu-item.active { background: #e6f7ff; color: #1890ff; font-weight: 500; }
+    .menu-item svg { flex-shrink: 0; width: 16px; height: 16px; }
+
+    /* === 主区域 === */
+    .main { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+    /* === 顶部栏 === */
+    .top-bar {
+      position: fixed; top: 0; left: 240px; right: 0; height: 50px;
+      background: #fff; border-bottom: 1px solid #f0f0f0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; z-index: 99;
+    }
+    .project-title { display: flex; align-items: center; gap: 10px; }
+    .project-name { font-size: 15px; font-weight: 600; color: rgba(0,0,0,0.85); }
+    .ant-tag {
+      display: inline-flex; align-items: center;
+      padding: 1px 7px; font-size: 12px; border-radius: 2px;
+      border: 1px solid #d9d9d9; color: rgba(0,0,0,0.65);
+      background: #fff; line-height: 20px;
+    }
+    .top-bar-right { display: flex; align-items: center; gap: 16px; }
+    .bell-wrap { position: relative; cursor: pointer; }
+    .bell-badge {
+      position: absolute; top: -5px; right: -8px;
+      background: #ff4d4f; color: #fff; font-size: 10px;
+      min-width: 16px; height: 16px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; padding: 0 3px;
+    }
+    .user-avatar {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: #1890ff; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 500; cursor: pointer;
+    }
+
+    /* === 内容区 === */
+    .page-content {
+      margin-top: 50px; padding: 20px 24px 24px;
+      display: flex; flex-direction: column; min-height: calc(100vh - 50px);
+    }
+
+    /* === 主卡片 === */
+    .doc-card {
+      flex: 1; background: #fff; border-radius: 10px;
+      padding: 0 24px; display: flex; flex-direction: column;
+    }
+
+    /* === 搜索栏 === */
+    .search-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 0; border-bottom: 1px solid #f0f0f0;
+    }
+    .search-input-wrap {
+      position: relative; width: 264px;
+    }
+    .search-icon {
+      position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+      color: #ccc; pointer-events: none;
+    }
+    .search-input {
+      width: 100%; height: 32px; border: 1px solid #d9d9d9; border-radius: 6px;
+      padding: 0 30px 0 32px; font-size: 14px; color: rgba(0,0,0,0.85);
+      outline: none; transition: border-color 0.2s; background: #fff;
+    }
+    .search-input:focus { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.15); }
+    .search-clear {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      width: 16px; height: 16px; border-radius: 50%; background: #ccc;
+      color: #fff; display: none; align-items: center; justify-content: center;
+      font-size: 10px; cursor: pointer; line-height: 1;
+    }
+    .search-clear.visible { display: flex; }
+    .search-clear:hover { background: #aaa; }
+
+    /* 导出按钮 */
+    .btn-export {
+      display: inline-flex; align-items: center; gap: 6px;
+      height: 32px; padding: 0 16px; border-radius: 4px;
+      background: #1890ff; color: #fff; border: none;
+      font-size: 14px; cursor: pointer; transition: background 0.2s;
+    }
+    .btn-export:hover:not(:disabled) { background: #40a9ff; }
+    .btn-export:disabled { background: #88befb; cursor: not-allowed; }
+    #btnExport { background: #fff; color: rgba(0,0,0,0.65); border-color: #d9d9d9; }
+    #btnExport:hover:not(:disabled) { border-color: #1890ff; color: #1890ff; background: #fff; }
+    #btnExport:disabled { background: #fafafa; color: rgba(0,0,0,0.25); border-color: #d9d9d9; cursor: not-allowed; }
+
+    /* === 表格 === */
+    .table-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      padding: 12px 16px; text-align: left; font-size: 14px;
+      font-weight: 500; color: rgba(0,0,0,0.85);
+      background: #fafafa; border-bottom: 1px solid #f0f0f0;
+      white-space: nowrap;
+    }
+    thead th:first-child { width: 40px; }
+    tbody tr {
+      border-bottom: 1px solid #f0f0f0; cursor: pointer;
+      transition: background 0.15s;
+    }
+    tbody tr:hover { background: #fafafa; }
+    tbody tr.selected { background: #e6f4ff; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody td { padding: 12px 16px; font-size: 14px; color: rgba(0,0,0,0.85); }
+    tbody td:first-child { width: 40px; }
+    .doc-name-cell { color: rgba(0,0,0,0.85); }
+    .doc-name-cell:hover { color: #1890ff; }
+    .time-muted { color: rgba(0,0,0,0.45); }
+
+    /* === 分页 === */
+    .pagination {
+      display: flex; align-items: center; justify-content: flex-end;
+      padding: 14px 0 4px; gap: 4px;
+    }
+    .page-info { font-size: 14px; color: rgba(0,0,0,0.65); margin-right: 8px; }
+    .page-info span { color: #1890ff; }
+    .page-btn {
+      min-width: 32px; height: 32px; border: 1px solid #d9d9d9;
+      border-radius: 4px; background: #fff; font-size: 14px;
+      color: rgba(0,0,0,0.65); cursor: pointer; padding: 0 8px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .page-btn:hover { border-color: #1890ff; color: #1890ff; }
+    .page-btn.active { border-color: #1890ff; color: #1890ff; background: #fff; font-weight: 500; }
+    .page-btn:disabled { cursor: not-allowed; color: rgba(0,0,0,0.25); border-color: #d9d9d9; }
+
+    /* === 空状态 === */
+    .empty-state {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 60px 0; gap: 12px;
+    }
+    .empty-icon { opacity: 0.3; }
+    .empty-text { font-size: 14px; color: rgba(0,0,0,0.45); }
+
+    /* === Modal === */
+    .modal-mask {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45); z-index: 1000;
+      align-items: center; justify-content: center;
+    }
+    .modal-mask.open { display: flex; }
+    .modal-box {
+      background: #fff; border-radius: 8px;
+      box-shadow: 0 6px 32px rgba(0,0,0,0.15);
+      min-width: 700px; max-width: 800px; width: 700px;
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 24px; border-bottom: 1px solid #f0f0f0;
+    }
+    .modal-title { font-size: 16px; font-weight: 600; color: rgba(0,0,0,0.85); }
+    .modal-close {
+      width: 28px; height: 28px; display: flex; align-items: center;
+      justify-content: center; border-radius: 4px; cursor: pointer;
+      color: rgba(0,0,0,0.45); font-size: 15px; transition: all 0.15s;
+    }
+    .modal-close:hover { background: #f5f5f5; color: rgba(0,0,0,0.85); }
+    .modal-body { padding: 20px 24px; }
+    .modal-footer {
+      padding: 12px 24px; border-top: 1px solid #f0f0f0;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+
+    /* 导出modal内表格 */
+    .export-header {
+      font-size: 13px; color: rgba(0,0,0,0.45); margin-bottom: 12px;
+    }
+    .export-table-wrap { max-height: calc(100vh - 420px); overflow-y: auto; border: 1px solid #f0f0f0; border-radius: 6px; }
+    .export-table { width: 100%; border-collapse: collapse; }
+    .export-table thead th {
+      padding: 10px 16px; font-size: 13px;
+      background: #fafafa; font-weight: 500;
+    }
+    .export-table tbody td { padding: 10px 16px; font-size: 13px; }
+    .export-table tbody tr { border-bottom: 1px solid #f0f0f0; }
+    .export-table tbody tr:last-child { border-bottom: none; }
+    .export-table tbody tr:hover { background: #fafafa; }
+    .version-tag {
+      display: inline-block; padding: 1px 7px; border-radius: 2px;
+      font-size: 12px; line-height: 20px;
+    }
+    .tag-yellow { background: #fffbe6; color: #d48806; border: 1px solid #ffe58f; }
+    .tag-green  { background: #f6ffed; color: #389e0d; border: 1px solid #b7eb8f; }
+    .tag-blue   { background: #e6f7ff; color: #096dd9; border: 1px solid #91d5ff; }
+
+    /* 版本下拉 */
+    .ver-select-wrap { position: relative; display: inline-block; }
+    .ver-select-btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      color: #1890ff; cursor: pointer; font-size: 13px; background: none; border: none; padding: 0;
+    }
+    .ver-select-btn:hover { color: #40a9ff; }
+    .ver-select-btn svg { transition: transform 0.2s; }
+    .ver-select-btn.open svg { transform: rotate(180deg); }
+    .ver-dropdown {
+      display: none; position: absolute; right: 0; top: 28px;
+      background: #fff; border-radius: 6px; z-index: 200;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      border: 1px solid #f0f0f0; min-width: 300px; max-height: 360px; overflow-y: auto;
+    }
+    .ver-dropdown.open { display: block; }
+    .ver-item {
+      padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #f5f5f5;
+      transition: background 0.15s;
+    }
+    .ver-item:last-child { border-bottom: none; }
+    .ver-item:hover { background: #f5f5f5; }
+    .ver-item.chosen { background: #f5f5f5; }
+    .ver-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .ver-item-left { display: flex; align-items: center; gap: 10px; }
+    .ver-item-author { font-size: 12px; color: rgba(0,0,0,0.45); }
+    .ver-item-time { font-size: 12px; color: rgba(0,0,0,0.25); }
+    .ver-item-desc { font-size: 12px; color: rgba(0,0,0,0.45); margin-top: 2px; }
+
+    /* suffix checkbox */
+    .suffix-wrap { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+    .suffix-wrap input[type=checkbox] { cursor: pointer; }
+    .suffix-tip {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 14px; height: 14px; border-radius: 50%; background: rgba(0,0,0,0.15);
+      color: #fff; font-size: 10px; cursor: default; font-weight: 600;
+    }
+    .tooltip-wrap { position: relative; }
+    .tooltip-box {
+      display: none; position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%);
+      background: #fff; border: 1px solid #f0f0f0; border-radius: 4px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.12); padding: 8px 10px;
+      font-size: 12px; color: rgba(0,0,0,0.85); width: 260px; z-index: 300;
+      white-space: normal; line-height: 1.5;
+    }
+    .tooltip-wrap:hover .tooltip-box { display: block; }
+
+    /* modal buttons */
+    .btn { display: inline-flex; align-items: center; height: 32px; padding: 0 16px; border-radius: 4px; border: 1px solid #d9d9d9; background: #fff; color: rgba(0,0,0,0.85); font-size: 14px; cursor: pointer; transition: all 0.2s; }
+    .btn:hover { border-color: #1890ff; color: #1890ff; }
+    .btn-primary { background: #1890ff; border-color: #1890ff; color: #fff; }
+    .btn-primary:hover { background: #40a9ff; border-color: #40a9ff; color: #fff; }
+    .btn-primary:disabled { background: #88befb; border-color: #88befb; cursor: not-allowed; }
+    .btn-gap { margin-left: 8px; }
+
+    /* AI 审阅按钮 */
+    .btn-ai-review {
+      display: inline-flex; align-items: center; gap: 6px;
+      height: 32px; padding: 0 16px; border-radius: 4px;
+      background: #fff; color: #1890ff; border: 1px solid #1890ff;
+      font-size: 14px; cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    }
+    .btn-ai-review:hover { background: #e6f7ff; }
+
+    /* AI 审阅 modal */
+    .ai-modal-box {
+      background: #fff; border-radius: 8px;
+      box-shadow: 0 6px 32px rgba(0,0,0,0.15);
+      width: 540px; max-height: calc(100vh - 80px);
+      display: flex; flex-direction: column;
+    }
+    .ai-modal-body {
+      padding: 20px 24px; overflow-y: auto; flex: 1;
+    }
+    .ai-form-section { margin-bottom: 20px; }
+    .ai-form-section:last-child { margin-bottom: 0; }
+    .ai-form-label {
+      font-size: 13px; font-weight: 600; color: rgba(0,0,0,.85);
+      margin-bottom: 7px; display: flex; align-items: center; gap: 3px;
+    }
+    .ai-required { color: #ff4d4f; margin-left: 1px; }
+    .ai-hint {
+      margin-top: 6px; font-size: 12px; color: rgba(0,0,0,.45);
+      display: flex; align-items: flex-start; gap: 4px; line-height: 1.5;
+    }
+    .ai-hint-link { color: #1890ff; cursor: pointer; text-decoration: none; }
+    .ai-hint-link:hover { text-decoration: underline; }
+    .ai-select {
+      width: 100%; height: 34px; border: 1px solid #d9d9d9; border-radius: 4px;
+      padding: 0 28px 0 10px; font-size: 13px; color: rgba(0,0,0,.85);
+      background: #fff url("data:image/svg+xml,%3Csvg width='10' height='10' viewBox='0 0 10 10' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 3.5L5 6.5L8 3.5' stroke='%23999' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center;
+      outline: none; cursor: pointer; transition: border-color .15s;
+      -webkit-appearance: none; appearance: none;
+    }
+    .ai-select:focus { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,.1); }
+    .ai-select option:first-child { color: rgba(0,0,0,.35); }
+
+    /* 审阅范围 */
+    .ai-scope-hd {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;
+    }
+    .ai-scope-count { font-size: 12px; color: rgba(0,0,0,.45); }
+    .ai-scope-actions { display: flex; gap: 12px; }
+    .ai-scope-action { font-size: 12px; color: #1890ff; cursor: pointer; background: none; border: none; padding: 0; }
+    .ai-scope-action:hover { color: #40a9ff; }
+    .ai-scope-body {
+      border: 1px solid #f0f0f0; border-radius: 6px;
+      max-height: 220px; overflow-y: auto;
+    }
+    .ai-scope-class { border-bottom: 1px solid #f0f0f0; }
+    .ai-scope-class:last-child { border-bottom: none; }
+    .ai-scope-class-hd {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px; background: #fafafa; cursor: pointer; user-select: none;
+    }
+    .ai-scope-class-hd:hover { background: #f5f5f5; }
+    .ai-scope-class-left { display: flex; align-items: center; gap: 6px; }
+    .ai-scope-class-chevron {
+      width: 12px; height: 12px; flex-shrink: 0; color: rgba(0,0,0,.35);
+      transition: transform .18s;
+    }
+    .ai-scope-class.open .ai-scope-class-chevron { transform: rotate(90deg); }
+    .ai-scope-class-name { font-size: 12px; font-weight: 600; color: rgba(0,0,0,.65); }
+    .ai-scope-class-sel { font-size: 11px; color: rgba(0,0,0,.35); cursor: pointer; background: none; border: none; padding: 0; }
+    .ai-scope-class-sel:hover { color: #1890ff; }
+    .ai-scope-comps { display: none; padding: 4px 12px 8px 30px; }
+    .ai-scope-class.open .ai-scope-comps { display: block; }
+    .ai-scope-comp-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 4px 0; cursor: pointer; user-select: none;
+    }
+    .ai-scope-comp-item input[type=checkbox] { cursor: pointer; flex-shrink: 0; }
+    .ai-scope-comp-id { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 12px; color: rgba(0,0,0,.75); }
+    .ai-scope-comp-name { font-size: 12px; color: rgba(0,0,0,.45); }
+
+    /* 参考材料 */
+    .ai-ref-toggle {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 13px; font-weight: 600; color: rgba(0,0,0,.55);
+      cursor: pointer; user-select: none;
+      padding: 12px 0 0; border-top: 1px solid #f0f0f0; margin-top: 4px;
+    }
+    .ai-ref-toggle:hover { color: rgba(0,0,0,.85); }
+    .ai-ref-chevron { transition: transform .18s; }
+    .ai-ref-toggle.open .ai-ref-chevron { transform: rotate(90deg); }
+    .ai-ref-body { display: none; padding-top: 14px; }
+    .ai-ref-body.open { display: block; }
+    .ai-ref-item { margin-bottom: 14px; }
+    .ai-ref-item:last-child { margin-bottom: 0; }
+    .ai-ref-label { font-size: 12px; color: rgba(0,0,0,.65); margin-bottom: 6px; font-weight: 500; }
+  </style>
+</head>
+<body>
+
+<!-- === 侧边栏 === -->
+<aside class="sidebar">
+  <div class="sidebar-back" onclick="location.href='../frontend-outside-cn/projects.html'">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3L5 8l5 5"/></svg>
+    返回项目列表
+  </div>
+  <nav class="sidebar-menu">
+    <div class="menu-item" onclick="location.href='project-overview.html'">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="2" y="2" width="12" height="12" rx="1.5"/>
+        <path d="M5 6h6M5 9h4"/>
+      </svg>
+      概览
+    </div>
+    <div class="menu-item active">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M4 2h8a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z"/>
+        <path d="M5 6h6M5 9h6M5 12h3"/>
+      </svg>
+      文档审阅
+    </div>
+    <div class="menu-item" onclick="location.href='archives.html'">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M2 5h12v8H2z"/><path d="M2 5l2-3h5l2 3"/>
+      </svg>
+      档案管理
+    </div>
+  </nav>
+</aside>
+
+<!-- === 主区域 === -->
+<div class="main">
+  <div class="top-bar">
+    <div class="project-title">
+      <span class="project-name">天津创新中心项目</span>
+      <span class="ant-tag" style="color:rgba(0,0,0,0.45)">评估保障级（EAL）-2024</span>
+      <span class="ant-tag" style="color:#1890ff;border-color:#91d5ff;background:#e6f7ff">EAL5+</span>
+    </div>
+    <div class="top-bar-right">
+      <div class="bell-wrap">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.65)" stroke-width="1.8">
+          <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/>
+        </svg>
+        <span class="bell-badge">3</span>
+      </div>
+      <div class="user-avatar">章</div>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <div class="doc-card">
+
+      <!-- 搜索栏 -->
+      <div class="search-bar">
+        <div class="search-input-wrap">
+          <svg class="search-icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+            <circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l3 3"/>
+          </svg>
+          <input class="search-input" id="searchInput" type="text" placeholder="按文档名称搜索"
+            maxlength="100" oninput="handleSearch(this.value)" onkeydown="if(event.key==='Enter')doSearch()" />
+          <span class="search-clear" id="searchClear" onclick="clearSearch()">✕</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn btn-primary" id="btnExport" onclick="openExportModal()">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M8 2v8M5 7l3 3 3-3"/><path d="M3 13h10"/>
+            </svg>
+            导出Word
+          </button>
+        </div>
+      </div>
+
+      <!-- 表格 -->
+      <div class="table-wrap" id="tableWrap">
+        <table id="docTable">
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="checkAll" onchange="toggleAll(this)" /></th>
+              <th style="width:60%">文档名称</th>
+              <th style="width:20%">创建者</th>
+              <th style="width:20%">提交时间</th>
+            </tr>
+          </thead>
+          <tbody id="docList"></tbody>
+        </table>
+        <!-- 空状态 -->
+        <div class="empty-state" id="emptyState" style="display:none">
+          <svg class="empty-icon" width="80" height="64" viewBox="0 0 80 64" fill="none">
+            <rect x="8" y="12" width="48" height="40" rx="3" fill="#e8e8e8"/>
+            <rect x="16" y="20" width="32" height="4" rx="2" fill="#bbb"/>
+            <rect x="16" y="28" width="24" height="4" rx="2" fill="#bbb"/>
+            <rect x="16" y="36" width="20" height="4" rx="2" fill="#bbb"/>
+          </svg>
+          <span class="empty-text" id="emptyText">当前暂无文档</span>
+        </div>
+      </div>
+
+      <!-- 分页 -->
+      <div class="pagination" id="paginationWrap"></div>
+    </div>
+  </div>
+</div>
+
+<!-- === AI 审阅 Modal === -->
+<div class="modal-mask" id="aiModal">
+  <div class="ai-modal-box">
+    <div class="modal-header">
+      <span class="modal-title">发起 AI 审阅</span>
+      <span class="modal-close" onclick="closeAiModal()">✕</span>
+    </div>
+    <div class="ai-modal-body">
+
+      <!-- 被审阅文档 -->
+      <div class="ai-form-section">
+        <div class="ai-form-label">被审阅文档<span class="ai-required">*</span></div>
+        <select class="ai-select" id="aiDocSelect" onchange="onAiDocChange()">
+          <option value="" disabled selected>请选择档案中的文件</option>
+        </select>
+        <div class="ai-hint">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="flex-shrink:0;margin-top:1px"><circle cx="6" cy="6" r="5" stroke="rgba(0,0,0,0.25)" stroke-width="1.2"/><path d="M6 5.5v3M6 3.5v.5" stroke="rgba(0,0,0,0.25)" stroke-width="1.2" stroke-linecap="round"/></svg>
+          可先将文档上传至<a class="ai-hint-link" href="archives.html">「档案管理」</a>，再在此处选择
+        </div>
+      </div>
+
+      <!-- 审阅范围 -->
+      <div class="ai-form-section">
+        <div class="ai-form-label">审阅范围</div>
+        <div class="ai-scope-hd">
+          <span class="ai-scope-count" id="aiScopeCount">已选 0 个保障组件</span>
+          <div class="ai-scope-actions">
+            <button class="ai-scope-action" onclick="aiScopeSelectAll()">全选</button>
+            <button class="ai-scope-action" onclick="aiScopeClearAll()">全不选</button>
+          </div>
+        </div>
+        <div class="ai-scope-body" id="aiScopeBody"></div>
+      </div>
+
+      <!-- 参考材料 -->
+      <div class="ai-form-section">
+        <div class="ai-ref-toggle" id="aiRefToggle" onclick="toggleAiRef()">
+          <svg class="ai-ref-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          参考材料（可选）
+        </div>
+        <div class="ai-ref-body" id="aiRefBody">
+          <div class="ai-ref-item">
+            <div class="ai-ref-label">上一版本文档</div>
+            <select class="ai-select" id="aiPrevDocSelect">
+              <option value="">不附加（跳过）</option>
+            </select>
+          </div>
+          <div class="ai-ref-item">
+            <div class="ai-ref-label">上一版本审阅报告</div>
+            <select class="ai-select" id="aiPrevReportSelect">
+              <option value="">不附加（跳过）</option>
+              <option value="r1">2025-03-10 ASE_ST 审阅报告</option>
+              <option value="r2">2025-01-22 ADV_ARC 审阅报告</option>
+            </select>
+            <div class="ai-hint" style="margin-top:5px">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="flex-shrink:0;margin-top:1px"><circle cx="6" cy="6" r="5" stroke="rgba(0,0,0,0.25)" stroke-width="1.2"/><path d="M6 5.5v3M6 3.5v.5" stroke="rgba(0,0,0,0.25)" stroke-width="1.2" stroke-linecap="round"/></svg>
+              首次审阅可跳过此项
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <span></span>
+      <div>
+        <button class="btn" onclick="closeAiModal()">取消</button>
+        <button class="btn btn-primary btn-gap" id="btnStartReview" disabled onclick="confirmAiReview()">开始审阅</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- === 导出Word Modal === -->
+<div class="modal-mask" id="exportModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">导出Word</span>
+      <span class="modal-close" onclick="closeExportModal()">✕</span>
+    </div>
+    <div class="modal-body">
+      <div class="export-header" id="exportHeader">已选中 0/0 项</div>
+      <div class="export-table-wrap">
+        <table class="export-table">
+          <thead>
+            <tr>
+              <th style="width:40px"><input type="checkbox" id="exportCheckAll" onchange="toggleExportAll(this)" /></th>
+              <th style="width:55%">文档名称</th>
+              <th style="width:18%">版本号</th>
+              <th style="width:20%">操作</th>
+            </tr>
+          </thead>
+          <tbody id="exportList"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <label class="suffix-wrap">
+        <input type="checkbox" id="suffixCheck" checked />
+        <span>导出文件是否包含后缀</span>
+        <span class="tooltip-wrap">
+          <span class="suffix-tip">i</span>
+          <span class="tooltip-box">勾选后，文件名将自动添加版本号作为后缀，如"文件名.docx"将导出为"文件名_文档版本.docx"</span>
+        </span>
+      </label>
+      <div>
+        <button class="btn" onclick="closeExportModal()">取消</button>
+        <button class="btn btn-primary btn-gap" id="btnConfirmExport" onclick="confirmExport()">导出</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// Mock 数据
+// ─────────────────────────────────────────────
+const ALL_DOCS = [
+  {
+    id: 1, docName: 'D-0002-TEE1.0-5100-S1-V1.0_TEE_EAL5+_ASE_ST_可信执行环境1.0安全目标',
+    creator: '梁通', pushTime: Date.now() - 1000 * 60 * 30,
+    versions: [
+      { id: 101, version: 'S1-V1.0', createBy: '梁通', createTime: Date.now() - 86400000 * 2, docDescribe: '正式版本，包含完整安全目标定义' },
+      { id: 102, version: 'S1-V0.9', createBy: '梁通', createTime: Date.now() - 86400000 * 5, docDescribe: '预发布版本，修复目标描述歧义' },
+      { id: 103, version: 'D-0.8',   createBy: '徐海通', createTime: Date.now() - 86400000 * 10, docDescribe: '草稿版本，初步框架' },
+    ]
+  },
+  {
+    id: 2, docName: 'D-0002-TEE1.0-5200-S1-V1.0_TEE_EAL5+_ADV_ARC_可信执行环境1.0安全架构',
+    creator: '徐海通', pushTime: Date.now() - 1000 * 60 * 90,
+    versions: [
+      { id: 201, version: 'S1-V1.0', createBy: '徐海通', createTime: Date.now() - 86400000 * 1, docDescribe: '架构设计终版，覆盖所有安全功能模块' },
+      { id: 202, version: 'S1-V0.9', createBy: '徐海通', createTime: Date.now() - 86400000 * 4, docDescribe: '修订章节结构，新增模块交互说明' },
+    ]
+  },
+  {
+    id: 3, docName: 'D-0002-TEE1.0-5210-S1-V1.0_TEE_EAL5+_ADV_FSP_可信执行环境1.0功能规范',
+    creator: '章喆', pushTime: Date.now() - 1000 * 60 * 200,
+    versions: [
+      { id: 301, version: 'S1-V1.0', createBy: '章喆', createTime: Date.now() - 86400000 * 3, docDescribe: '功能规范正式版' },
+      { id: 302, version: 'D-0.9',   createBy: '章喆', createTime: Date.now() - 86400000 * 8, docDescribe: '功能规范草稿，待评审' },
+    ]
+  },
+  {
+    id: 4, docName: 'D-0002-TEE1.0-5300-S1-V1.0_TEE_EAL5+_ADV_TDS_可信执行环境1.0TOE设计规范',
+    creator: '梁通', pushTime: Date.now() - 1000 * 3600 * 5,
+    versions: [
+      { id: 401, version: 'S1-V1.0', createBy: '梁通', createTime: Date.now() - 86400000 * 2, docDescribe: 'TOE设计规范终版' },
+    ]
+  },
+  {
+    id: 5, docName: 'D-0002-TEE1.0-5400-S1-V1.0_TEE_EAL5+_ATE_COV_可信执行环境1.0测试覆盖率分析',
+    creator: '徐海通', pushTime: Date.now() - 86400000,
+    versions: [
+      { id: 501, version: 'S1-V1.0', createBy: '徐海通', createTime: Date.now() - 86400000 * 2, docDescribe: '测试覆盖率分析报告终版' },
+      { id: 502, version: 'S1-V0.8', createBy: '梁通',   createTime: Date.now() - 86400000 * 6, docDescribe: '初版覆盖率统计' },
+    ]
+  },
+  {
+    id: 6, docName: 'D-0002-TEE1.0-5500-S1-V1.0_TEE_EAL5+_ATE_DPT_可信执行环境1.0测试深度分析',
+    creator: '章喆', pushTime: Date.now() - 86400000 * 2,
+    versions: [
+      { id: 601, version: 'S1-V1.0', createBy: '章喆', createTime: Date.now() - 86400000 * 3, docDescribe: '测试深度分析终版' },
+    ]
+  },
+  {
+    id: 7, docName: 'D-0002-TEE1.0-5600-S1-V1.0_TEE_EAL5+_AVA_VAN_可信执行环境1.0脆弱性分析',
+    creator: '梁通', pushTime: Date.now() - 86400000 * 3,
+    versions: [
+      { id: 701, version: 'S1-V1.0', createBy: '梁通',   createTime: Date.now() - 86400000 * 4, docDescribe: '脆弱性分析报告' },
+      { id: 702, version: 'D-0.9',   createBy: '梁通',   createTime: Date.now() - 86400000 * 9, docDescribe: '草稿版本，初步漏洞分析' },
+    ]
+  },
+  {
+    id: 8, docName: 'D-0002-TEE1.0-5700-S1-V1.0_TEE_EAL5+_AGD_OPE_可信执行环境1.0操作用户指南',
+    creator: '徐海通', pushTime: Date.now() - 86400000 * 4,
+    versions: [
+      { id: 801, version: 'S1-V1.0', createBy: '徐海通', createTime: Date.now() - 86400000 * 5, docDescribe: '操作用户指南终版' },
+      { id: 802, version: 'S1-V0.9', createBy: '徐海通', createTime: Date.now() - 86400000 * 8, docDescribe: '初版用户指南' },
+    ]
+  },
+  {
+    id: 9, docName: 'D-0002-TEE1.0-5800-S1-V1.0_TEE_EAL5+_ALC_CMC_可信执行环境1.0配置管理能力',
+    creator: '章喆', pushTime: Date.now() - 86400000 * 6,
+    versions: [
+      { id: 901, version: 'S1-V1.0', createBy: '章喆', createTime: Date.now() - 86400000 * 7, docDescribe: '配置管理能力文档' },
+    ]
+  },
+  {
+    id: 10, docName: 'D-0002-TEE1.0-5900-S1-V1.0_TEE_EAL5+_ALC_LCD_可信执行环境1.0生命周期定义',
+    creator: '梁通', pushTime: Date.now() - 86400000 * 7,
+    versions: [
+      { id: 1001, version: 'S1-V1.0', createBy: '梁通', createTime: Date.now() - 86400000 * 8, docDescribe: '生命周期定义文档' },
+      { id: 1002, version: 'D-0.8',   createBy: '梁通', createTime: Date.now() - 86400000 * 14, docDescribe: '初稿，基础框架' },
+    ]
+  },
+  {
+    id: 11, docName: 'D-0002-TEE1.0-6000-S1-V1.0_TEE_EAL5+_ALC_TAT_可信执行环境1.0开发工具定义',
+    creator: '徐海通', pushTime: Date.now() - 86400000 * 8,
+    versions: [
+      { id: 1101, version: 'S1-V1.0', createBy: '徐海通', createTime: Date.now() - 86400000 * 9, docDescribe: '开发工具说明文档' },
+    ]
+  },
+  {
+    id: 12, docName: 'D-0002-TEE1.0-6100-S1-V1.0_TEE_EAL5+_ADV_IMP_可信执行环境1.0实现表示',
+    creator: '章喆', pushTime: Date.now() - 86400000 * 10,
+    versions: [
+      { id: 1201, version: 'S1-V1.0', createBy: '章喆', createTime: Date.now() - 86400000 * 11, docDescribe: '实现表示正式版本' },
+      { id: 1202, version: 'S1-V0.9', createBy: '章喆', createTime: Date.now() - 86400000 * 15, docDescribe: '预发布版本' },
+    ]
+  },
+];
+
+const PAGE_SIZE = 10;
+let currentPage = 1;
+let searchKeyword = '';
+let selectedIds = new Set();
+
+// 导出modal状态
+let exportList = [];    // { ...doc, chosenVersionId, chosenVersionLabel }
+let exportSelectedIds = new Set();
+
+// ─────────────────────────────────────────────
+// 工具函数
+// ─────────────────────────────────────────────
+function relativeTime(ts) {
+  const diff = Date.now() - ts;
+  const s = Math.floor(diff / 1000);
+  if (s < 60)  return '刚刚';
+  if (s < 3600) return Math.floor(s / 60) + ' 分钟前';
+  if (s < 86400) return Math.floor(s / 3600) + ' 小时前';
+  if (s < 86400 * 30) return Math.floor(s / 86400) + ' 天前';
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function versionTag(ver) {
+  if (!ver) return `<span class="version-tag tag-blue">最新版本</span>`;
+  if (ver.charAt(0) === 'V' || ver.startsWith('S')) return `<span class="version-tag tag-yellow">${ver}</span>`;
+  if (ver.charAt(0) === 'D') return `<span class="version-tag tag-green">${ver}</span>`;
+  return `<span class="version-tag tag-blue">${ver}</span>`;
+}
+
+// ─────────────────────────────────────────────
+// 过滤 & 分页
+// ─────────────────────────────────────────────
+function filteredDocs() {
+  if (!searchKeyword) return ALL_DOCS;
+  return ALL_DOCS.filter(d => d.docName.includes(searchKeyword));
+}
+
+function pagedDocs() {
+  const all = filteredDocs();
+  const start = (currentPage - 1) * PAGE_SIZE;
+  return all.slice(start, start + PAGE_SIZE);
+}
+
+// ─────────────────────────────────────────────
+// 渲染列表
+// ─────────────────────────────────────────────
+function render() {
+  const docs = pagedDocs();
+  const total = filteredDocs().length;
+  const list = document.getElementById('docList');
+  const empty = document.getElementById('emptyState');
+  const table = document.getElementById('docTable');
+
+  if (docs.length === 0) {
+    table.style.display = 'none';
+    empty.style.display = 'flex';
+    document.getElementById('emptyText').textContent = searchKeyword ? '未找到相关结果' : '当前暂无文档';
+    document.getElementById('paginationWrap').innerHTML = '';
+    document.getElementById('checkAll').checked = false;
+    document.getElementById('checkAll').indeterminate = false;
+    updateExportBtn();
+    return;
+  }
+  table.style.display = '';
+  empty.style.display = 'none';
+
+  list.innerHTML = docs.map(doc => `
+    <tr id="row-${doc.id}" class="${selectedIds.has(doc.id) ? 'selected' : ''}" onclick="handleRowClick(event, ${doc.id})">
+      <td onclick="event.stopPropagation()">
+        <input type="checkbox" id="cb-${doc.id}" ${selectedIds.has(doc.id) ? 'checked' : ''}
+          onchange="toggleItem(${doc.id}, this.checked)" />
+      </td>
+      <td>
+        <span class="doc-name-cell" title="${doc.docName}" onclick="location.href='doc.html'" style="cursor:pointer;">${doc.docName}</span>
+      </td>
+      <td>${doc.creator}</td>
+      <td class="time-muted">${relativeTime(doc.pushTime)}</td>
+    </tr>
+  `).join('');
+
+  updateHeaderCheckbox();
+  updateExportBtn();
+  renderPagination(total);
+}
+
+function renderPagination(total) {
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const wrap = document.getElementById('paginationWrap');
+  if (total === 0) { wrap.innerHTML = ''; return; }
+
+  let html = `<span class="page-info">共 <span>${total}</span> 个文档</span>`;
+  html += `<button class="page-btn" onclick="goPage(${currentPage - 1})" ${currentPage <= 1 ? 'disabled' : ''}>‹</button>`;
+  for (let p = 1; p <= totalPages; p++) {
+    if (totalPages > 7 && p > 2 && p < totalPages - 1 && Math.abs(p - currentPage) > 1) {
+      if (p === 3 || p === totalPages - 2) html += `<span class="page-btn" style="cursor:default;border:none">…</span>`;
+      continue;
+    }
+    html += `<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="goPage(${p})">${p}</button>`;
+  }
+  html += `<button class="page-btn" onclick="goPage(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''}>›</button>`;
+  wrap.innerHTML = html;
+}
+
+function goPage(p) {
+  const total = filteredDocs().length;
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  if (p < 1 || p > totalPages) return;
+  currentPage = p;
+  render();
+}
+
+// ─────────────────────────────────────────────
+// 选中逻辑
+// ─────────────────────────────────────────────
+function handleRowClick(e, id) {
+  if (e.target.type === 'checkbox') return;
+  const cb = document.getElementById('cb-' + id);
+  const newChecked = !cb.checked;
+  cb.checked = newChecked;
+  toggleItem(id, newChecked);
+}
+
+function toggleItem(id, checked) {
+  if (checked) selectedIds.add(id); else selectedIds.delete(id);
+  const row = document.getElementById('row-' + id);
+  if (row) row.classList.toggle('selected', checked);
+  updateHeaderCheckbox();
+  updateExportBtn();
+}
+
+function toggleAll(cb) {
+  pagedDocs().forEach(doc => {
+    selectedIds[cb.checked ? 'add' : 'delete'](doc.id);
+    const row = document.getElementById('row-' + doc.id);
+    if (row) row.classList.toggle('selected', cb.checked);
+    const c = document.getElementById('cb-' + doc.id);
+    if (c) c.checked = cb.checked;
+  });
+  updateExportBtn();
+}
+
+function updateHeaderCheckbox() {
+  const docs = pagedDocs();
+  const selInPage = docs.filter(d => selectedIds.has(d.id)).length;
+  const cb = document.getElementById('checkAll');
+  cb.checked = docs.length > 0 && selInPage === docs.length;
+  cb.indeterminate = selInPage > 0 && selInPage < docs.length;
+}
+
+function updateExportBtn() {
+  document.getElementById('btnExport').disabled = selectedIds.size === 0;
+}
+
+// ─────────────────────────────────────────────
+// 搜索
+// ─────────────────────────────────────────────
+function handleSearch(val) {
+  const clearBtn = document.getElementById('searchClear');
+  clearBtn.classList.toggle('visible', val.length > 0);
+  searchKeyword = val.trim();
+  currentPage = 1;
+  render();
+}
+
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  handleSearch('');
+}
+
+// ─────────────────────────────────────────────
+// 导出 Modal
+// ─────────────────────────────────────────────
+function openExportModal() {
+  if (selectedIds.size === 0) return;
+  // 构造导出列表：选中的文档，默认选中最新版本(index 0)
+  exportList = ALL_DOCS
+    .filter(d => selectedIds.has(d.id))
+    .map(d => ({
+      ...d,
+      chosenVersionId: d.versions[0]?.id ?? 0,
+      chosenVersionLabel: d.versions[0]?.version ?? null,
+    }));
+  exportSelectedIds = new Set(exportList.map(d => d.id));
+  renderExportList();
+  document.getElementById('exportModal').classList.add('open');
+  // 点遮罩不关闭（source 中 maskClosable: false）
+}
+
+function closeExportModal() {
+  document.getElementById('exportModal').classList.remove('open');
+  // 关闭所有下拉
+  document.querySelectorAll('.ver-dropdown.open').forEach(d => d.classList.remove('open'));
+  document.querySelectorAll('.ver-select-btn.open').forEach(b => b.classList.remove('open'));
+}
+
+function renderExportList() {
+  const tbody = document.getElementById('exportList');
+  const selCount = exportSelectedIds.size;
+  const total = exportList.length;
+  document.getElementById('exportHeader').textContent = `已选中 ${selCount}/${total} 项`;
+
+  const allSel = selCount === total;
+  const someSel = selCount > 0 && !allSel;
+  const cb = document.getElementById('exportCheckAll');
+  cb.checked = allSel;
+  cb.indeterminate = someSel;
+
+  document.getElementById('btnConfirmExport').disabled = selCount === 0;
+
+  tbody.innerHTML = exportList.map((doc, idx) => {
+    const isSelected = exportSelectedIds.has(doc.id);
+    return `
+    <tr class="${isSelected ? 'selected' : ''}">
+      <td onclick="event.stopPropagation()">
+        <input type="checkbox" ${isSelected ? 'checked' : ''}
+          onchange="toggleExportItem(${doc.id}, this.checked)" />
+      </td>
+      <td title="${doc.docName}" style="max-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${doc.docName}</td>
+      <td>${versionTag(doc.chosenVersionLabel)}</td>
+      <td>
+        <div class="ver-select-wrap">
+          <button class="ver-select-btn" id="verBtn-${doc.id}" onclick="toggleVerDropdown('${doc.id}')">
+            选择版本
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M2 3.5L5 6.5L8 3.5"/>
+            </svg>
+          </button>
+          <div class="ver-dropdown" id="verDrop-${doc.id}">
+            ${doc.versions.map(v => `
+              <div class="ver-item ${v.id === doc.chosenVersionId ? 'chosen' : ''}"
+                onclick="chooseVersion(${doc.id}, ${v.id}, '${v.version}')">
+                <div class="ver-item-header">
+                  <div class="ver-item-left">
+                    ${versionTag(v.version)}
+                    <span class="ver-item-author">${v.createBy}</span>
+                  </div>
+                  <span class="ver-item-time">${relativeTime(v.createTime)}</span>
+                </div>
+                <div class="ver-item-desc">${v.docDescribe}</div>
+              </div>`).join('')}
+          </div>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function toggleExportItem(id, checked) {
+  if (checked) exportSelectedIds.add(id); else exportSelectedIds.delete(id);
+  renderExportList();
+}
+
+function toggleExportAll(cb) {
+  exportList.forEach(d => {
+    exportSelectedIds[cb.checked ? 'add' : 'delete'](d.id);
+  });
+  renderExportList();
+}
+
+function toggleVerDropdown(docId) {
+  const drop = document.getElementById('verDrop-' + docId);
+  const btn  = document.getElementById('verBtn-' + docId);
+  const isOpen = drop.classList.contains('open');
+  // 关闭其他所有
+  document.querySelectorAll('.ver-dropdown.open').forEach(d => d.classList.remove('open'));
+  document.querySelectorAll('.ver-select-btn.open').forEach(b => b.classList.remove('open'));
+  if (!isOpen) {
+    drop.classList.add('open');
+    btn.classList.add('open');
+  }
+}
+
+function chooseVersion(docId, versionId, versionLabel) {
+  const doc = exportList.find(d => d.id === docId);
+  if (!doc) return;
+  doc.chosenVersionId = versionId;
+  doc.chosenVersionLabel = versionLabel;
+  // 关闭下拉
+  document.querySelectorAll('.ver-dropdown.open').forEach(d => d.classList.remove('open'));
+  document.querySelectorAll('.ver-select-btn.open').forEach(b => b.classList.remove('open'));
+  renderExportList();
+}
+
+function confirmExport() {
+  if (exportSelectedIds.size === 0) return;
+  const isIncludeSuffix = document.getElementById('suffixCheck').checked;
+  const items = exportList.filter(d => exportSelectedIds.has(d.id));
+  const names = items.map(d => {
+    const ver = d.chosenVersionLabel;
+    return isIncludeSuffix && ver ? `${d.docName}_${ver}.docx` : `${d.docName}.docx`;
+  });
+  closeExportModal();
+  // toast 模拟提示
+  showToast(`已导出 ${items.length} 份文档`);
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;padding:8px 18px;border-radius:6px;font-size:13px;z-index:2000;pointer-events:none;transition:opacity 0.3s';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 2000);
+}
+
+// 点击其他地方关闭版本下拉
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.ver-select-wrap')) {
+    document.querySelectorAll('.ver-dropdown.open').forEach(d => d.classList.remove('open'));
+    document.querySelectorAll('.ver-select-btn.open').forEach(b => b.classList.remove('open'));
+  }
+});
+
+// ─────────────────────────────────────────────
+// AI 审阅 Modal
+// ─────────────────────────────────────────────
+
+// 档案文件 mock（含平台文档 + 用户上传）
+const ARCHIVE_FILES = [
+  { value: 'arch-1', label: 'D-0002-TEE1.0-5100 ASE_ST 可信执行环境1.0安全目标.pdf' },
+  { value: 'arch-2', label: 'D-0002-TEE1.0-5200 ADV_ARC 可信执行环境1.0安全架构.pdf' },
+  { value: 'arch-3', label: 'D-0002-TEE1.0-5210 ADV_FSP 可信执行环境1.0功能规范.pdf' },
+  { value: 'arch-4', label: 'XXX微内核操作系统架构说明.docx' },
+  { value: 'arch-5', label: 'XXX微内核操作系统开发手册.pdf' },
+];
+
+// 保障组件审阅范围 mock（按保障类分组）
+const SCOPE_CLASSES = [
+  {
+    classId: 'ASE', className: 'ASE — 安全目标评估',
+    components: [
+      { id: 'ASE_INT.1', name: 'ST 简介' },
+      { id: 'ASE_OBJ.2', name: '安全目标' },
+      { id: 'ASE_SPD.1', name: '安全问题定义' },
+      { id: 'ASE_REQ.2', name: '安全要求声明' },
+    ]
+  },
+  {
+    classId: 'ADV', className: 'ADV — 开发',
+    components: [
+      { id: 'ADV_ARC.1', name: '安全架构描述' },
+      { id: 'ADV_FSP.5', name: '完整半形式化功能规范' },
+      { id: 'ADV_TDS.4', name: '半形式化模块化设计' },
+    ]
+  },
+  {
+    classId: 'AGD', className: 'AGD — 指导性文件',
+    components: [
+      { id: 'AGD_OPE.1', name: '操作用户指南' },
+    ]
+  },
+  {
+    classId: 'ALC', className: 'ALC — 生命周期支持',
+    components: [
+      { id: 'ALC_CMC.4', name: 'CM 能力（生产支持）' },
+      { id: 'ALC_TAT.2', name: '合规开发工具' },
+    ]
+  },
+  {
+    classId: 'ATE', className: 'ATE — 测试',
+    components: [
+      { id: 'ATE_COV.2', name: '覆盖分析' },
+      { id: 'ATE_DPT.3', name: '深度测试' },
+    ]
+  },
+  {
+    classId: 'AVA', className: 'AVA — 脆弱性评估',
+    components: [
+      { id: 'AVA_VAN.5', name: '高抗攻击潜力脆弱性分析' },
+    ]
+  },
+];
+
+const aiSelectedComps = new Set();
+
+function openAiModal() {
+  // 填充档案文档下拉
+  const docSel = document.getElementById('aiDocSelect');
+  docSel.innerHTML = '<option value="" disabled selected>请选择档案中的文件</option>' +
+    ARCHIVE_FILES.map(f => `<option value="${f.value}">${f.label}</option>`).join('');
+
+  // 填充上一版本文档下拉（同档案列表）
+  const prevSel = document.getElementById('aiPrevDocSelect');
+  prevSel.innerHTML = '<option value="">不附加（跳过）</option>' +
+    ARCHIVE_FILES.map(f => `<option value="${f.value}">${f.label}</option>`).join('');
+
+  aiSelectedComps.clear();
+  renderAiScope();
+  updateAiStartBtn();
+
+  // 收起参考材料
+  document.getElementById('aiRefToggle').classList.remove('open');
+  document.getElementById('aiRefBody').classList.remove('open');
+
+  document.getElementById('aiModal').classList.add('open');
+}
+
+function closeAiModal() {
+  document.getElementById('aiModal').classList.remove('open');
+}
+
+function onAiDocChange() {
+  updateAiStartBtn();
+}
+
+function updateAiStartBtn() {
+  const hasDoc = document.getElementById('aiDocSelect').value !== '';
+  document.getElementById('btnStartReview').disabled = !hasDoc;
+}
+
+function renderAiScope() {
+  const body = document.getElementById('aiScopeBody');
+  body.innerHTML = SCOPE_CLASSES.map(cls => {
+    const allIds = cls.components.map(c => c.id);
+    const selCount = allIds.filter(id => aiSelectedComps.has(id)).length;
+    return `
+      <div class="ai-scope-class open" id="aiCls-${cls.classId}">
+        <div class="ai-scope-class-hd" onclick="toggleAiClass('${cls.classId}')">
+          <div class="ai-scope-class-left">
+            <svg class="ai-scope-class-chevron" viewBox="0 0 12 12" fill="none">
+              <path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span class="ai-scope-class-name">${cls.classId} — ${cls.className.split('—')[1].trim()}</span>
+          </div>
+          <button class="ai-scope-class-sel" onclick="event.stopPropagation();toggleAiClassAll('${cls.classId}')">
+            ${selCount === allIds.length ? '全不选' : '全选'}
+          </button>
+        </div>
+        <div class="ai-scope-comps">
+          ${cls.components.map(comp => `
+            <label class="ai-scope-comp-item">
+              <input type="checkbox" ${aiSelectedComps.has(comp.id) ? 'checked' : ''}
+                onchange="toggleAiComp('${comp.id}', this.checked)" />
+              <span class="ai-scope-comp-id">${comp.id}</span>
+              <span class="ai-scope-comp-name">${comp.name}</span>
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+  updateAiScopeCount();
+}
+
+function toggleAiClass(classId) {
+  document.getElementById('aiCls-' + classId).classList.toggle('open');
+}
+
+function toggleAiComp(compId, checked) {
+  if (checked) aiSelectedComps.add(compId); else aiSelectedComps.delete(compId);
+  updateAiScopeCount();
+  // 刷新对应组的「全选/全不选」按钮文字
+  SCOPE_CLASSES.forEach(cls => {
+    const allIds = cls.components.map(c => c.id);
+    const selCount = allIds.filter(id => aiSelectedComps.has(id)).length;
+    const btn = document.querySelector(`#aiCls-${cls.classId} .ai-scope-class-sel`);
+    if (btn) btn.textContent = selCount === allIds.length ? '全不选' : '全选';
+  });
+}
+
+function toggleAiClassAll(classId) {
+  const cls = SCOPE_CLASSES.find(c => c.classId === classId);
+  const allIds = cls.components.map(c => c.id);
+  const allSel = allIds.every(id => aiSelectedComps.has(id));
+  allIds.forEach(id => allSel ? aiSelectedComps.delete(id) : aiSelectedComps.add(id));
+  renderAiScope();
+}
+
+function aiScopeSelectAll() {
+  SCOPE_CLASSES.forEach(cls => cls.components.forEach(c => aiSelectedComps.add(c.id)));
+  renderAiScope();
+}
+
+function aiScopeClearAll() {
+  aiSelectedComps.clear();
+  renderAiScope();
+}
+
+function updateAiScopeCount() {
+  const n = aiSelectedComps.size;
+  document.getElementById('aiScopeCount').textContent =
+    n === 0 ? '已选 0 个保障组件（默认审阅全部）' : `已选 ${n} 个保障组件`;
+}
+
+function toggleAiRef() {
+  document.getElementById('aiRefToggle').classList.toggle('open');
+  document.getElementById('aiRefBody').classList.toggle('open');
+}
+
+function confirmAiReview() {
+  const docVal = document.getElementById('aiDocSelect').value;
+  if (!docVal) return;
+  closeAiModal();
+  showToast('审阅任务已提交，完成后将通知您');
+}
+
+// ─────────────────────────────────────────────
+// 初始化
+// ─────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
