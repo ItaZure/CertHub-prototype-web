@@ -600,6 +600,7 @@
 
 </div>
 
+<script src="deploy-log.js"></script>
 <script>
   const logModal = document.getElementById('logModal');
   const logList = document.getElementById('logList');
@@ -609,18 +610,15 @@
   document.getElementById('closeLogBtn').addEventListener('click', () => logModal.classList.remove('visible'));
   logModal.addEventListener('click', e => { if (e.target === logModal) logModal.classList.remove('visible'); });
 
-  fetch('deploy-log.json?t=' + Date.now())
-    .then(r => r.json())
-    .then(logs => {
-      if (!logs.length) return;
-      lastUpdateTime.textContent = '最近更新：' + logs[0].time;
-      logList.innerHTML = logs.map(l => `
-        <div class="log-item">
-          <span class="log-time">${l.time}</span>
-          <span class="log-desc">${l.desc}</span>
-        </div>`).join('');
-    })
-    .catch(() => {});
+  const logs = window.DEPLOY_LOG || [];
+  if (logs.length) {
+    lastUpdateTime.textContent = '最近更新：' + logs[0].time;
+    logList.innerHTML = logs.map(l => `
+      <div class="log-item">
+        <span class="log-time">${l.time}</span>
+        <span class="log-desc">${l.desc}</span>
+      </div>`).join('');
+  }
 </script>
 </body>
 </html>
