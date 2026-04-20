@@ -94,6 +94,8 @@
     .status-badge.bound .status-dot  { background: #52c41a; }
     .status-badge.detached .status-dot { background: #faad14; }
 
+    .status-badge[title] { cursor: default; }
+
     /* 批注触发按钮（划词后显示） */
     .annotate-trigger-btn {
       display: none;
@@ -462,6 +464,14 @@
 
         <!-- 悬浮按钮组 -->
         <div class="fragment-actions" id="fragmentActions">
+          <button class="action-btn" title="分离片段，使内容独立于表单">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+              <line x1="2" y1="2" x2="22" y2="22"></line>
+            </svg>
+            分离
+          </button>
           <button class="action-btn" id="refreshBtn" title="刷新">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="23 4 23 10 17 10"></polyline>
@@ -489,9 +499,9 @@
         </div>
 
         <!-- 状态标签 -->
-        <div class="status-badge bound" id="statusBadge">
+        <div class="status-badge bound" id="statusBadge" title="内容与表单同步，修改表单后点击刷新可更新内容">
           <span class="status-dot"></span>
-          <span class="status-label">绑定</span>
+          <span class="status-label">同步</span>
         </div>
       </div>
     </div>
@@ -614,11 +624,13 @@
     if (val) {
       statusBadge.classList.remove('bound');
       statusBadge.classList.add('detached');
-      statusLabel.textContent = '分离';
+      statusLabel.textContent = '不同步';
+      statusBadge.title = '内容已与表单分离，点击刷新可重新同步';
     } else {
       statusBadge.classList.remove('detached');
       statusBadge.classList.add('bound');
-      statusLabel.textContent = '绑定';
+      statusLabel.textContent = '同步';
+      statusBadge.title = '内容与表单同步，修改表单后点击刷新可更新内容';
     }
   }
 
