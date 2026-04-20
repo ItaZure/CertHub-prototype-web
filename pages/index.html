@@ -23,6 +23,95 @@
       gap: 12px;
     }
 
+    header .header-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: #9ca3af;
+    }
+
+    #lastUpdateTime {
+      font-size: 13px;
+      color: #9ca3af;
+    }
+
+    .log-btn {
+      padding: 4px 12px;
+      border: 1px solid #e8eaed;
+      border-radius: 4px;
+      background: #fff;
+      color: #374151;
+      font-size: 12px;
+      cursor: pointer;
+      transition: border-color 0.12s, color 0.12s;
+    }
+    .log-btn:hover { border-color: #2563eb; color: #2563eb; }
+
+    /* 日志弹窗 */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.3);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.visible { display: flex; }
+
+    .modal-box {
+      background: #fff;
+      border-radius: 8px;
+      width: 520px;
+      max-height: 70vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid #e8eaed;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      cursor: pointer;
+      color: #9ca3af;
+      font-size: 20px;
+      line-height: 1;
+    }
+    .modal-close:hover { color: #374151; }
+
+    .log-list {
+      overflow-y: auto;
+      padding: 12px 20px;
+      flex: 1;
+    }
+
+    .log-item {
+      display: flex;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid #f3f4f6;
+      font-size: 13px;
+    }
+    .log-item:last-child { border-bottom: none; }
+
+    .log-time {
+      color: #9ca3af;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .log-desc { color: #374151; }
+
     header .logo {
       width: 32px;
       height: 32px;
@@ -152,7 +241,24 @@
   <div class="logo">C</div>
   <h1>CertHub 页面目录</h1>
   <span>— 所有 UI 原型 &amp; 交互 Demo</span>
+  <div class="header-right">
+    <span id="lastUpdateTime">最近更新：—</span>
+    <button class="log-btn" id="openLogBtn">查看日志</button>
+  </div>
 </header>
+
+<!-- 日志弹窗 -->
+<div class="modal-overlay" id="logModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span>更新日志</span>
+      <span class="modal-close" id="closeLogBtn">&times;</span>
+    </div>
+    <div class="log-list" id="logList">
+      <div style="color:#9ca3af;font-size:13px;padding:20px 0;text-align:center;">暂无日志</div>
+    </div>
+  </div>
+</div>
 
 <div class="container">
 
@@ -494,5 +600,27 @@
 
 </div>
 
+<script>
+  const logModal = document.getElementById('logModal');
+  const logList = document.getElementById('logList');
+  const lastUpdateTime = document.getElementById('lastUpdateTime');
+
+  document.getElementById('openLogBtn').addEventListener('click', () => logModal.classList.add('visible'));
+  document.getElementById('closeLogBtn').addEventListener('click', () => logModal.classList.remove('visible'));
+  logModal.addEventListener('click', e => { if (e.target === logModal) logModal.classList.remove('visible'); });
+
+  fetch('deploy-log.json?t=' + Date.now())
+    .then(r => r.json())
+    .then(logs => {
+      if (!logs.length) return;
+      lastUpdateTime.textContent = '最近更新：' + logs[0].time;
+      logList.innerHTML = logs.map(l => `
+        <div class="log-item">
+          <span class="log-time">${l.time}</span>
+          <span class="log-desc">${l.desc}</span>
+        </div>`).join('');
+    })
+    .catch(() => {});
+</script>
 </body>
 </html>
