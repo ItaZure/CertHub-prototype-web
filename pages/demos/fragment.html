@@ -19,9 +19,7 @@
     .fragment-wrapper {
       width: 100%;
       max-width: 860px;
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
+      position: relative;
     }
 
     .fragment-card {
@@ -74,41 +72,45 @@
       flex-shrink: 0;
     }
 
-    /* 分离/绑定 滑块按钮 */
-    .detach-toggle {
+    /* 状态标签（绑定/分离） */
+    .status-badge {
       display: flex;
       align-items: center;
-      background: #f0f2f5;
-      border-radius: 20px;
-      padding: 2px;
-      gap: 0;
-      border: 1px solid #e0e0e0;
-      user-select: none;
-      cursor: pointer;
+      gap: 5px;
       font-size: 12px;
-    }
-
-    .detach-toggle .toggle-opt {
-      padding: 3px 10px;
-      border-radius: 16px;
-      color: #888;
-      transition: background 0.18s, color 0.18s;
+      color: #555;
+      user-select: none;
       white-space: nowrap;
     }
 
-    .detach-toggle.bound .toggle-opt.bind {
-      background: #fff;
-      color: #1a1a1a;
-      font-weight: 500;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      transition: background 0.2s;
     }
 
-    .detach-toggle.detached .toggle-opt.detach {
+    .status-badge.bound .status-dot  { background: #52c41a; }
+    .status-badge.detached .status-dot { background: #faad14; }
+
+    /* 批注触发按钮（划词后显示） */
+    .annotate-trigger-btn {
+      display: none;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border: 1px solid #1677ff;
+      border-radius: 4px;
       background: #fff;
-      color: #1a1a1a;
-      font-weight: 500;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      color: #1677ff;
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.12s;
     }
+    .annotate-trigger-btn:hover { background: #e6f4ff; }
+    .annotate-trigger-btn.visible { display: flex; }
 
     /* 悬浮按钮组（编辑、删除） */
     .fragment-actions {
@@ -201,13 +203,12 @@
 
     /* 划词批注高亮 */
     .annotation-highlight {
-      background: #fff7e6;
-      border-bottom: 2px solid #fa8c16;
+      background: #dbeafe;
       cursor: pointer;
       border-radius: 2px;
     }
     .annotation-highlight:hover {
-      background: #ffe7ba;
+      background: #bfdbfe;
     }
 
     .divider {
@@ -219,14 +220,50 @@
     /* 批注面板 */
     .annotation-panel {
       width: 220px;
-      flex-shrink: 0;
+      position: absolute;
+      left: calc(100% + 12px);
+      top: 0;
       display: none;
       flex-direction: column;
-      gap: 0;
     }
 
     .annotation-panel.visible {
       display: flex;
+    }
+
+    /* 批注输入框嵌在面板内 */
+    .annotation-input-inline {
+      display: none;
+      flex-direction: column;
+      gap: 0;
+      border: 1px solid #e8eaed;
+      border-top: none;
+      background: #fff;
+      padding: 10px 12px;
+    }
+
+    .annotation-input-inline.visible {
+      display: flex;
+    }
+
+    .annotation-input-inline textarea {
+      width: 100%;
+      border: 1px solid #d9d9d9;
+      border-radius: 4px;
+      padding: 6px 8px;
+      font-size: 13px;
+      resize: none;
+      height: 64px;
+      font-family: inherit;
+      outline: none;
+    }
+    .annotation-input-inline textarea:focus { border-color: #1677ff; }
+
+    .annotation-input-inline .ann-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+      margin-top: 6px;
     }
 
     .annotation-panel-header {
@@ -285,38 +322,6 @@
       line-height: 1.5;
     }
 
-    .annotation-input-area {
-      display: none;
-      position: fixed;
-      background: #fff;
-      border: 1px solid #e8eaed;
-      border-radius: 6px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-      padding: 10px;
-      z-index: 1000;
-      width: 200px;
-    }
-
-    .annotation-input-area textarea {
-      width: 100%;
-      border: 1px solid #d9d9d9;
-      border-radius: 4px;
-      padding: 6px 8px;
-      font-size: 13px;
-      resize: none;
-      height: 64px;
-      font-family: inherit;
-      outline: none;
-    }
-    .annotation-input-area textarea:focus { border-color: #1677ff; }
-
-    .annotation-input-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 6px;
-      margin-top: 6px;
-    }
-
     .ann-btn {
       padding: 3px 10px;
       border-radius: 4px;
@@ -334,64 +339,6 @@
     }
     .ann-btn.primary:hover { background: #0958d9; }
     .ann-btn:hover { background: #f5f5f5; }
-
-    /* 对比弹窗分栏 */
-    .diff-cols {
-      display: flex;
-      gap: 0;
-      border: 1px solid #e8eaed;
-      border-radius: 6px;
-      overflow: hidden;
-      margin-top: 4px;
-    }
-
-    .diff-col {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .diff-col + .diff-col {
-      border-left: 1px solid #e8eaed;
-    }
-
-    .diff-col-header {
-      padding: 6px 12px;
-      font-size: 12px;
-      font-weight: 500;
-      color: #666;
-      background: #fafafa;
-      border-bottom: 1px solid #e8eaed;
-    }
-
-    .diff-col-body {
-      padding: 10px 12px;
-      font-size: 13px;
-      line-height: 1.7;
-      max-height: 300px;
-      overflow-y: auto;
-    }
-
-    .diff-line {
-      display: flex;
-      gap: 6px;
-      padding: 1px 0;
-    }
-
-    .diff-line .dl-label {
-      color: #888;
-      flex-shrink: 0;
-      min-width: 80px;
-    }
-
-    .diff-line .dl-value { color: #1a1a1a; }
-    .diff-line.changed .dl-value { background: #fff7e6; border-radius: 2px; padding: 0 3px; }
-    .diff-col.next .diff-line.changed .dl-value { background: #f6ffed; }
-
-    .diff-divider {
-      border: none;
-      border-top: 1px dashed #e8eaed;
-      margin: 6px 0;
-    }
 
     /* 表单模态 */
     .modal-overlay {
@@ -505,8 +452,23 @@
       </div>
 
       <div class="fragment-controls">
+        <!-- 划词后出现的批注按钮 -->
+        <button class="annotate-trigger-btn" id="annotateTriggerBtn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+          批注
+        </button>
+
         <!-- 悬浮按钮组 -->
         <div class="fragment-actions" id="fragmentActions">
+          <button class="action-btn" id="refreshBtn" title="刷新">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
+            刷新
+          </button>
           <button class="action-btn" id="editBtn" title="编辑">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -526,10 +488,10 @@
           </button>
         </div>
 
-        <!-- 分离/绑定 滑块 -->
-        <div class="detach-toggle bound" id="detachToggle" title="切换分离/绑定状态">
-          <span class="toggle-opt detach">分离</span>
-          <span class="toggle-opt bind">绑定</span>
+        <!-- 状态标签 -->
+        <div class="status-badge bound" id="statusBadge">
+          <span class="status-dot"></span>
+          <span class="status-label">绑定</span>
         </div>
       </div>
     </div>
@@ -541,7 +503,7 @@
         <line x1="12" y1="8" x2="12" y2="12"></line>
         <line x1="12" y1="16" x2="12.01" y2="16"></line>
       </svg>
-      内容已更新，刷新后同步
+      表单内容已更新，刷新后同步
     </div>
 
     <!-- 内容区 -->
@@ -559,51 +521,16 @@
         </svg>
       </span>
     </div>
-    <div class="annotation-list" id="annotationList">
-      <div style="padding:16px;color:#999;font-size:13px;text-align:center;">暂无批注</div>
-    </div>
-  </div>
-</div>
-
-<!-- 批注输入浮层 -->
-<div class="annotation-input-area" id="annotationInputArea">
-  <textarea id="annotationTextarea" placeholder="添加批注..."></textarea>
-  <div class="annotation-input-actions">
-    <button class="ann-btn" id="annCancel">取消</button>
-    <button class="ann-btn primary" id="annConfirm">确认</button>
-  </div>
-</div>
-
-<!-- 绑定确认弹窗 -->
-<div class="modal-overlay" id="bindConfirmModal">
-  <div class="modal-box" id="bindConfirmBox" style="width:360px;">
-    <div class="modal-header">
-      <span>确认绑定</span>
-      <span class="modal-close" id="bindConfirmClose">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </span>
-    </div>
-    <div class="modal-body" style="padding:20px 20px 8px;">
-      <p id="bindConfirmDesc" style="font-size:14px;color:#333;line-height:1.7;">绑定后内容将根据表单生成，并删除所有批注</p>
-      <!-- 有差异时显示 -->
-      <div id="bindDiffArea" style="display:none;margin-top:12px;">
-        <div class="diff-cols">
-          <div class="diff-col current">
-            <div class="diff-col-header">当前内容</div>
-            <div class="diff-col-body" id="diffCurrentBody"></div>
-          </div>
-          <div class="diff-col next">
-            <div class="diff-col-header">绑定后内容</div>
-            <div class="diff-col-body" id="diffNextBody"></div>
-          </div>
-        </div>
+    <!-- 嵌入输入框 -->
+    <div class="annotation-input-inline" id="annotationInputInline">
+      <textarea id="annotationTextarea" placeholder="添加批注..."></textarea>
+      <div class="ann-actions">
+        <button class="ann-btn" id="annCancel">取消</button>
+        <button class="ann-btn primary" id="annConfirm">确认</button>
       </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn" id="bindConfirmCancel">取消</button>
-      <button class="btn primary" id="bindConfirmOk">确认绑定</button>
+    <div class="annotation-list" id="annotationList">
+      <div style="padding:16px;color:#999;font-size:13px;text-align:center;">暂无批注</div>
     </div>
   </div>
 </div>
@@ -664,11 +591,13 @@
 <script>
   const card = document.getElementById('fragmentCard');
   const body = document.getElementById('fragmentBody');
-  const detachToggle = document.getElementById('detachToggle');
+  const statusBadge = document.getElementById('statusBadge');
+  const statusLabel = statusBadge.querySelector('.status-label');
+  const annotateTriggerBtn = document.getElementById('annotateTriggerBtn');
   const updateBanner = document.getElementById('updateBanner');
   const annotationPanel = document.getElementById('annotationPanel');
   const annotationList = document.getElementById('annotationList');
-  const annotationInputArea = document.getElementById('annotationInputArea');
+  const annotationInputInline = document.getElementById('annotationInputInline');
   const annotationTextarea = document.getElementById('annotationTextarea');
   const editModal = document.getElementById('editModal');
 
@@ -679,134 +608,31 @@
   let pendingRange = null;
   let pendingText = null;
 
-  const bindConfirmModal = document.getElementById('bindConfirmModal');
-  const bindConfirmBox   = document.getElementById('bindConfirmBox');
-  const bindDiffArea     = document.getElementById('bindDiffArea');
-  const diffCurrentBody  = document.getElementById('diffCurrentBody');
-  const diffNextBody     = document.getElementById('diffNextBody');
-
-  // 从模板生成结构化行数组
-  function getTemplateLines(data) {
-    return [
-      { label: 'ST标题', value: data['st-title'] },
-      { label: 'ST版本', value: data['st-version'] },
-      { label: 'ST作者', value: data['st-author'] },
-      { label: 'ST出版日期', value: data['st-date'] },
-      null, // 分隔线
-      { label: 'TOE名称', value: data['toe-name'] },
-      { label: 'TOE版本号', value: data['toe-version'] },
-      { label: 'TOE英文名称', value: data['toe-name-en'] },
-      { label: '生产商', value: data['manufacturer'] },
-    ];
-  }
-
-  // 从当前 body DOM 提取对应行
-  function getCurrentLines() {
-    const labels = ['ST标题', 'ST版本', 'ST作者', 'ST出版日期', null,
-                    'TOE名称', 'TOE版本号', 'TOE英文名称', '生产商'];
-    const rows = body.querySelectorAll('.field-row');
-    let ri = 0;
-    return labels.map(label => {
-      if (label === null) return null;
-      const row = rows[ri++];
-      if (!row) return { label, value: '' };
-      const val = row.querySelector('.field-value');
-      return { label, value: val ? val.textContent.trim() : '' };
-    });
-  }
-
-  function renderDiffCol(container, lines, changedIdx, isNext) {
-    container.innerHTML = '';
-    lines.forEach((line, i) => {
-      if (line === null) {
-        const hr = document.createElement('hr');
-        hr.className = 'diff-divider';
-        container.appendChild(hr);
-        return;
-      }
-      const div = document.createElement('div');
-      div.className = 'diff-line' + (changedIdx.has(i) ? ' changed' : '');
-      div.innerHTML = `<span class="dl-label">${line.label}：</span><span class="dl-value">${line.value}</span>`;
-      container.appendChild(div);
-    });
-  }
-
-  function openBindConfirm() {
-    const currentLines  = getCurrentLines();
-    const templateLines = getTemplateLines(formData);
-
-    // 找出有差异的行索引
-    const changedIdx = new Set();
-    currentLines.forEach((line, i) => {
-      if (line === null) return;
-      if (templateLines[i] && line.value !== templateLines[i].value) changedIdx.add(i);
-    });
-
-    if (changedIdx.size > 0) {
-      // 有差异：展示分栏对比，加宽弹窗
-      bindConfirmBox.style.width = '680px';
-      bindDiffArea.style.display = 'block';
-      renderDiffCol(diffCurrentBody, currentLines, changedIdx, false);
-      renderDiffCol(diffNextBody, templateLines, changedIdx, true);
+  // ── 状态标签更新 ──────────────────────────────
+  function setDetached(val) {
+    isDetached = val;
+    if (val) {
+      statusBadge.classList.remove('bound');
+      statusBadge.classList.add('detached');
+      statusLabel.textContent = '分离';
     } else {
-      // 无差异：普通确认
-      bindConfirmBox.style.width = '360px';
-      bindDiffArea.style.display = 'none';
+      statusBadge.classList.remove('detached');
+      statusBadge.classList.add('bound');
+      statusLabel.textContent = '绑定';
     }
-    bindConfirmModal.classList.add('visible');
   }
-
-  // ── 分离/绑定 切换 ────────────────────────────
-  detachToggle.addEventListener('click', () => {
-    if (!isDetached) {
-      // 绑定 → 分离：直接切换
-      isDetached = true;
-      detachToggle.classList.remove('bound');
-      detachToggle.classList.add('detached');
-      enterTextEdit();
-    } else {
-      // 分离 → 绑定：二次确认
-      openBindConfirm();
-    }
-  });
-
-  function doBindConfirm() {
-    isDetached = false;
-    detachToggle.classList.remove('detached');
-    detachToggle.classList.add('bound');
-    exitTextEdit();
-    updateBanner.classList.remove('visible');
-    // 清除所有批注
-    annotations = [];
-    renderAnnotations();
-    // 重新用表单值渲染内容
-    renderContent(formData);
-    bindConfirmModal.classList.remove('visible');
-  }
-
-  document.getElementById('bindConfirmOk').addEventListener('click', doBindConfirm);
-  document.getElementById('bindConfirmCancel').addEventListener('click', () => bindConfirmModal.classList.remove('visible'));
-  document.getElementById('bindConfirmClose').addEventListener('click', () => bindConfirmModal.classList.remove('visible'));
-  bindConfirmModal.addEventListener('click', (e) => { if (e.target === bindConfirmModal) bindConfirmModal.classList.remove('visible'); });
 
   // ── 点击内容区进入文本编辑 ────────────────────
   body.addEventListener('click', (e) => {
     if (e.target.closest('.action-btn')) return;
-    if (!isEditing) {
-      enterTextEdit();
-    }
+    if (!isEditing) enterTextEdit();
   });
 
   function enterTextEdit() {
     isEditing = true;
     card.classList.add('editing');
     body.setAttribute('contenteditable', 'true');
-    // 进入编辑 → 自动切换为分离
-    if (!isDetached) {
-      isDetached = true;
-      detachToggle.classList.remove('bound');
-      detachToggle.classList.add('detached');
-    }
+    if (!isDetached) setDetached(true);
   }
 
   function exitTextEdit() {
@@ -815,7 +641,7 @@
     body.removeAttribute('contenteditable');
   }
 
-  // ── 表单数据（独立维护，与 DOM 解耦）─────────
+  // ── 表单数据 ──────────────────────────────────
   let formData = {
     'st-title':    'ST标题',
     'st-version':  'D1.0',
@@ -827,7 +653,6 @@
     'manufacturer':'望安科技',
   };
 
-  // 模板渲染：重新用 formData 生成 body 内容
   function renderContent(data) {
     body.innerHTML = `
       <div class="field-row"><span class="field-label">ST标题：</span><span class="field-value">${data['st-title']}</span></div>
@@ -844,32 +669,56 @@
 
   // 点击卡片外部退出文本编辑
   document.addEventListener('click', (e) => {
-    if (!card.contains(e.target) && !annotationInputArea.contains(e.target)) {
+    if (!card.contains(e.target) && !annotationPanel.contains(e.target)) {
       if (isEditing) exitTextEdit();
+      // 隐藏批注触发按钮（若点击了外部非批注区域）
+      if (!annotationPanel.contains(e.target)) {
+        annotateTriggerBtn.classList.remove('visible');
+        pendingRange = null;
+        pendingText = null;
+      }
     }
   });
 
-  // ── 划词批注 ─────────────────────────────────
-  body.addEventListener('mouseup', (e) => {
-    if (!isEditing) return;
-    const sel = window.getSelection();
-    if (!sel || sel.isCollapsed) return;
-    const text = sel.toString().trim();
-    if (!text) return;
-
-    pendingRange = sel.getRangeAt(0).cloneRange();
-    pendingText = text;
-
-    const rect = pendingRange.getBoundingClientRect();
-    annotationInputArea.style.display = 'block';
-    annotationInputArea.style.left = (rect.left + window.scrollX) + 'px';
-    annotationInputArea.style.top = (rect.bottom + window.scrollY + 6) + 'px';
-    annotationTextarea.value = '';
-    annotationTextarea.focus();
+  // ── 划词 → 右上角出现批注按钮 ────────────────
+  body.addEventListener('mouseup', () => {
+    // 稍等一帧确保 selection 已稳定
+    setTimeout(() => {
+      const sel = window.getSelection();
+      if (!sel || sel.isCollapsed) {
+        annotateTriggerBtn.classList.remove('visible');
+        pendingRange = null;
+        pendingText = null;
+        return;
+      }
+      const text = sel.toString().trim();
+      if (!text) {
+        annotateTriggerBtn.classList.remove('visible');
+        return;
+      }
+      pendingRange = sel.getRangeAt(0).cloneRange();
+      pendingText = text;
+      annotateTriggerBtn.classList.add('visible');
+    }, 0);
   });
 
+  // ── 点击批注按钮 → 打开右侧面板+输入框 ───────
+  annotateTriggerBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!pendingRange) return;
+    // 打开批注面板
+    annotationPanel.classList.add('visible');
+    // 展开嵌入输入框
+    annotationInputInline.classList.add('visible');
+    annotationTextarea.value = '';
+    annotationTextarea.focus();
+    // 隐藏触发按钮
+    annotateTriggerBtn.classList.remove('visible');
+  });
+
+  // ── 批注确认/取消 ──────────────────────────────
   document.getElementById('annCancel').addEventListener('click', () => {
-    annotationInputArea.style.display = 'none';
+    annotationInputInline.classList.remove('visible');
     pendingRange = null;
     pendingText = null;
     window.getSelection()?.removeAllRanges();
@@ -878,20 +727,29 @@
   document.getElementById('annConfirm').addEventListener('click', () => {
     const note = annotationTextarea.value.trim();
     if (!note || !pendingRange) {
-      annotationInputArea.style.display = 'none';
+      annotationInputInline.classList.remove('visible');
       return;
     }
-    // 高亮选区
+    // 高亮选区（用 extractContents+insertNode，比 surroundContents 更健壮）
     const id = 'ann-' + (annIdCounter++);
-    const mark = document.createElement('mark');
-    mark.className = 'annotation-highlight';
-    mark.dataset.annId = id;
-    pendingRange.surroundContents(mark);
+    try {
+      const mark = document.createElement('mark');
+      mark.className = 'annotation-highlight';
+      mark.dataset.annId = id;
+      const frag = pendingRange.extractContents();
+      mark.appendChild(frag);
+      pendingRange.insertNode(mark);
+    } catch (err) {
+      // 极端跨节点情况忽略高亮，批注仍保存
+    }
 
     annotations.push({ id, quote: pendingText, text: note });
     renderAnnotations();
-    annotationPanel.classList.add('visible');
-    annotationInputArea.style.display = 'none';
+
+    // 状态切换为分离
+    setDetached(true);
+
+    annotationInputInline.classList.remove('visible');
     pendingRange = null;
     pendingText = null;
     window.getSelection()?.removeAllRanges();
@@ -914,14 +772,12 @@
       </div>
     `).join('');
 
-    // 绑定删除事件
     annotationList.querySelectorAll('.ann-delete-btn').forEach(btn => {
       btn.addEventListener('click', () => deleteAnnotation(btn.dataset.annId));
     });
   }
 
   function deleteAnnotation(id) {
-    // 移除文本中的高亮 mark，保留文字
     const mark = body.querySelector(`mark[data-ann-id="${id}"]`);
     if (mark) {
       const parent = mark.parentNode;
@@ -937,10 +793,20 @@
     annotationPanel.classList.remove('visible');
   });
 
+  // ── 刷新按钮 → 用 formData 重新渲染 ─────────
+  document.getElementById('refreshBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    renderContent(formData);
+    setDetached(false);
+    exitTextEdit();
+    updateBanner.classList.remove('visible');
+    annotations = [];
+    renderAnnotations();
+  });
+
   // ── 编辑按钮 → 打开表单 ───────────────────────
   document.getElementById('editBtn').addEventListener('click', (e) => {
     e.stopPropagation();
-    // 从 formData 填入表单（与 DOM 内容无关）
     document.getElementById('f-st-title').value    = formData['st-title'];
     document.getElementById('f-st-version').value  = formData['st-version'];
     document.getElementById('f-st-author').value   = formData['st-author'];
@@ -956,7 +822,6 @@
   document.getElementById('modalCancel').addEventListener('click', () => editModal.classList.remove('visible'));
 
   document.getElementById('modalSave').addEventListener('click', () => {
-    // 更新 formData
     formData['st-title']    = document.getElementById('f-st-title').value;
     formData['st-version']  = document.getElementById('f-st-version').value;
     formData['st-author']   = document.getElementById('f-st-author').value;
@@ -965,19 +830,14 @@
     formData['toe-version'] = document.getElementById('f-toe-version').value;
     formData['toe-name-en'] = document.getElementById('f-toe-name-en').value;
     formData['manufacturer']= document.getElementById('f-manufacturer').value;
-
     editModal.classList.remove('visible');
-
     if (isDetached) {
-      // 分离态：文本内容不变，仅提示
       updateBanner.classList.add('visible');
     } else {
-      // 绑定态：重新渲染内容
       renderContent(formData);
     }
   });
 
-  // 点击模态背景关闭
   editModal.addEventListener('click', (e) => {
     if (e.target === editModal) editModal.classList.remove('visible');
   });
